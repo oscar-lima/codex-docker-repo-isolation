@@ -46,7 +46,10 @@ container described below supplies the enforceable host-filesystem boundary.
 - Launcher source: `bin/codex-isolated` in this repository
 - Dockerfile source: `Dockerfile` in this repository
 - Base image: Alpine Linux with Node.js 22
-- Added runtime packages: Bubblewrap, Python 3, and `uv`/`uvx`
+- Added runtime packages: Bubblewrap, GNU coreutils, Git, Python 3, pytest, and
+  `uv`/`uvx`
+- Included helper: `wezterm-agent-state`, for the shared Codex status hooks
+- Included wrapper: `code-review-graph`, dispatched through `uvx`
 
 Launch it from the repository that should be exposed:
 

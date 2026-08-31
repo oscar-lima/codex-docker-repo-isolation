@@ -1,0 +1,31 @@
+#!/bin/sh
+set -eu
+
+# Publish agent state to the current WezTerm pane without printing visible text.
+# This container-local copy keeps Codex hooks working without exposing the host's
+# ~/.config/wezterm directory to the container.
+case "${1:-}" in
+  running|completed|failed|attention)
+    state=$1
+    ;;
+  clear|idle)
+    state=
+    ;;
+  *)
+    echo "usage: wezterm-agent-state {running|completed|failed|attention|clear}" >&2
+    exit 2
+    ;;
+esac
+
+# Hooks may run outside WezTerm or without an attached terminal.
+if [ -z "${WEZTERM_PANE:-}" ] || ! (: > /dev/tty) 2>/dev/null; then
+  exit 0
+fi
+
+encoded=$(printf %s "$state" | base64 | tr -d '\n')
+
+if [ -n "${TMUX:-}" ]; then
+  printf '\033Ptmux;\033\033]1337;SetUserVar=agent_state=%s\007\033\\' "$encoded" > /dev/tty
+else
+  printf '\033]1337;SetUserVar=agent_state=%s\007' "$encoded" > /dev/tty
+fi

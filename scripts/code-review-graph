@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+
+# The shared Codex hooks invoke this name directly. Keep the package and its
+# musl-compatible Python runtime in the persistent uv volumes.
+exec uvx code-review-graph "$@"

@@ -15,6 +15,17 @@ docker build \
     --tag codex-isolated \
     "${project_dir}"
 
+docker run --rm --entrypoint /bin/sh codex-isolated -c '
+    set -eu
+    git --version
+    python3 --version
+    python3 -m pytest --version
+    uv --version
+    command -v code-review-graph
+    wezterm-agent-state running
+    codex --version
+'
+
 install -D -m 0755 "${project_dir}/bin/codex-isolated" "${launcher_target}"
 docker volume create codex-isolated-uv-cache >/dev/null
 docker volume create codex-isolated-uv-data >/dev/null
