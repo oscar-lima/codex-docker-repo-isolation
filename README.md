@@ -44,6 +44,11 @@ codex-isolated
 Arguments are forwarded to Codex. The launcher refuses `/` and the user's home
 directory because either would expose an excessively broad host tree.
 
+When launched from WezTerm, the launcher forwards `WEZTERM_PANE` so the shared
+Codex lifecycle hooks can update the pane's running, attention, and completed
+indicators. It also forwards `TMUX` as a marker so the helper uses tmux's OSC
+passthrough form when Codex is launched from a tmux session.
+
 ## Security boundary
 
 The container uses a read-only root filesystem, drops all capabilities, enables

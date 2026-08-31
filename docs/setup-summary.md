@@ -73,6 +73,8 @@ The launcher starts Docker with:
   project trust and project-specific configuration.
 - No Docker socket, parent workspace, sibling repository, SSH directory, or
   general home-directory mount.
+- `WEZTERM_PANE` and `TMUX` are forwarded as environment markers so lifecycle
+  hook notifications reach the originating terminal pane.
 
 Codex is invoked with its inner sandbox disabled because Bubblewrap cannot
 create a second user namespace within the hardened Docker container. The

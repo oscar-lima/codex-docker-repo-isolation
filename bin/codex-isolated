@@ -26,5 +26,7 @@ exec docker run --rm -it \
     --mount "type=bind,source=/usr/lib/chatgpt/resources,target=/usr/lib/chatgpt/resources,readonly" \
     --env HOME=/home/oscar \
     --env CODEX_HOME=/home/oscar/.codex \
+    --env WEZTERM_PANE \
+    --env TMUX \
     --workdir "${task_repo}" \
     codex-isolated --sandbox danger-full-access "$@"

@@ -21,6 +21,15 @@ docker run --rm --entrypoint /bin/sh codex-isolated -c '
     command -v wezterm-agent-state >/dev/null
 '
 
+docker run --rm \
+    --env WEZTERM_PANE=verification \
+    --env TMUX=verification \
+    --entrypoint /bin/sh \
+    codex-isolated -c '
+        test "$WEZTERM_PANE" = verification
+        test "$TMUX" = verification
+    '
+
 cmp -s "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)/bin/codex-isolated" "$launcher" || {
     echo "Installed launcher differs from the repository source; run ./install.sh" >&2
     exit 1
