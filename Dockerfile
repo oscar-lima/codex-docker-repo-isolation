@@ -14,6 +14,7 @@ RUN addgroup -g "${GROUP_ID}" codex \
        git \
        jq \
        py3-pytest \
+       py3-qt5 \
        py3-yaml \
        python3 \
        ripgrep \

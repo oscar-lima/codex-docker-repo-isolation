@@ -31,9 +31,9 @@ Run:
 
 This builds `codex-isolated`, installs the launcher under `~/.local/bin`, and
 creates the persistent `uv` volumes. The installation verifies that Codex,
-the baseline shell utilities, Git, Python tooling, Ruby, `uv`, and both
-configured hook commands are available in the new image before installing the
-launcher.
+the baseline shell utilities, Git, Python tooling, PyQt 5 (using Qt's offscreen
+platform), Ruby, `uv`, and both configured hook commands are available in the
+new image before installing the launcher.
 
 ## Use
 
@@ -78,10 +78,11 @@ container-compatible Python MCP runtime data without sharing incompatible host
 artifacts.
 
 The image includes Bash, GNU coreutils and findutils, Git, `jq`, Python 3,
-PyYAML, pytest, ripgrep, Ruby with YAML support, and a container-local copy of
-the `wezterm-agent-state` helper. Git is required by repository-aware hooks,
-while the helper lets the shared hook configuration update WezTerm status
-without mounting the host's full WezTerm configuration directory.
+PyYAML, pytest, PyQt 5, ripgrep, Ruby with YAML support, and a container-local
+copy of the `wezterm-agent-state` helper. PyQt 5 makes headless GUI checks
+possible with `QT_QPA_PLATFORM=offscreen`. Git is required by repository-aware
+hooks, while the helper lets the shared hook configuration update WezTerm
+status without mounting the host's full WezTerm configuration directory.
 
 A container-local `code-review-graph` wrapper dispatches that hook command via
 `uvx`, using the persistent container-compatible `uv` volumes.

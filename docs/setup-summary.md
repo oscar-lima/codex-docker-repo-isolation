@@ -47,7 +47,7 @@ container described below supplies the enforceable host-filesystem boundary.
 - Dockerfile source: `Dockerfile` in this repository
 - Base image: Alpine Linux with Node.js 22
 - Added runtime packages: Bash, Bubblewrap, GNU coreutils and findutils, Git,
-  `jq`, Python 3, PyYAML, pytest, ripgrep, Ruby, and `uv`/`uvx`
+  `jq`, Python 3, PyYAML, pytest, PyQt 5, ripgrep, Ruby, and `uv`/`uvx`
 - Included helper: `wezterm-agent-state`, for the shared Codex status hooks
 - Included wrapper: `code-review-graph`, dispatched through `uvx`
 
@@ -133,6 +133,8 @@ The following behavior was tested successfully:
 - The Bubblewrap warning no longer appears.
 - All configured MCP servers initialize without startup warnings after the
   `uvx` runtime volumes were added.
+- Python tests run with the image-provided pytest, and a PyQt 5 widget can be
+  created and processed with Qt's offscreen platform plugin.
 - The `mobipick_gpt` Git worktree remained clean throughout setup.
 
 ## Important limitation

@@ -24,6 +24,10 @@ docker run --rm --entrypoint /bin/sh codex-isolated -c '
     python3 --version
     python3 -c "import yaml; print(\"PyYAML \" + yaml.__version__)"
     python3 -m pytest --version
+    qt_runtime_dir="$(mktemp -d)"
+    chmod 700 "$qt_runtime_dir"
+    QT_QPA_PLATFORM=offscreen XDG_RUNTIME_DIR="$qt_runtime_dir" \
+        python3 -c "from PyQt5.QtWidgets import QApplication, QWidget; app = QApplication([]); widget = QWidget(); widget.show(); app.processEvents(); print(\"PyQt5 offscreen smoke test passed\")"
     rg --version | head -n 1
     ruby --version
     ruby -e "require \"yaml\""
