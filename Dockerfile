@@ -6,7 +6,19 @@ ARG CODEX_VERSION=0.151.0
 
 RUN addgroup -g "${GROUP_ID}" codex \
     && adduser -D -u "${USER_ID}" -G codex codex \
-    && apk add --no-cache bubblewrap coreutils git py3-pytest python3 uv \
+    && apk add --no-cache \
+       bash \
+       bubblewrap \
+       coreutils \
+       findutils \
+       git \
+       jq \
+       py3-pytest \
+       py3-yaml \
+       python3 \
+       ripgrep \
+       ruby \
+       uv \
     && npm install --global "@openai/codex@${CODEX_VERSION}" \
     && install -d -o "${USER_ID}" -g "${GROUP_ID}" \
        /home/codex/.codex /home/codex/.cache

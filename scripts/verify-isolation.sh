@@ -13,9 +13,15 @@ docker volume inspect codex-isolated-uv-cache codex-isolated-uv-data >/dev/null
 
 docker run --rm --entrypoint /bin/sh codex-isolated -c '
     set -eu
+    command -v bash >/dev/null
+    find --version >/dev/null
     command -v git >/dev/null
+    command -v jq >/dev/null
     command -v python3 >/dev/null
+    python3 -c "import yaml" >/dev/null
     python3 -m pytest --version >/dev/null
+    command -v rg >/dev/null
+    ruby -e "require \"yaml\"" >/dev/null
     command -v uv >/dev/null
     command -v code-review-graph >/dev/null
     command -v wezterm-agent-state >/dev/null

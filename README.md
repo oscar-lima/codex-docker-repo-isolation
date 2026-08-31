@@ -31,8 +31,9 @@ Run:
 
 This builds `codex-isolated`, installs the launcher under `~/.local/bin`, and
 creates the persistent `uv` volumes. The installation verifies that Codex,
-Git, Python 3, pytest, `uv`, and both configured hook commands are available in
-the new image before installing the launcher.
+the baseline shell utilities, Git, Python tooling, Ruby, `uv`, and both
+configured hook commands are available in the new image before installing the
+launcher.
 
 ## Use
 
@@ -76,10 +77,11 @@ The `codex-isolated-uv-cache` and `codex-isolated-uv-data` Docker volumes retain
 container-compatible Python MCP runtime data without sharing incompatible host
 artifacts.
 
-The image includes Git, Python 3, pytest, and a container-local copy of the
-`wezterm-agent-state` helper. Git is required by repository-aware hooks, while
-the helper lets the shared hook configuration update WezTerm status without
-mounting the host's full WezTerm configuration directory.
+The image includes Bash, GNU coreutils and findutils, Git, `jq`, Python 3,
+PyYAML, pytest, ripgrep, Ruby with YAML support, and a container-local copy of
+the `wezterm-agent-state` helper. Git is required by repository-aware hooks,
+while the helper lets the shared hook configuration update WezTerm status
+without mounting the host's full WezTerm configuration directory.
 
 A container-local `code-review-graph` wrapper dispatches that hook command via
 `uvx`, using the persistent container-compatible `uv` volumes.

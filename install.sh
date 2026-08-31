@@ -17,9 +17,16 @@ docker build \
 
 docker run --rm --entrypoint /bin/sh codex-isolated -c '
     set -eu
+    bash --version | head -n 1
+    find --version | head -n 1
     git --version
+    jq --version
     python3 --version
+    python3 -c "import yaml; print(\"PyYAML \" + yaml.__version__)"
     python3 -m pytest --version
+    rg --version | head -n 1
+    ruby --version
+    ruby -e "require \"yaml\""
     uv --version
     command -v code-review-graph
     wezterm-agent-state running
