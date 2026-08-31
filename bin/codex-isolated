@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+task_repo="$(pwd -P)"
+task_uid="$(id -u)"
+task_gid="$(id -g)"
+
+if [[ "$task_repo" == "/" || "$task_repo" == "$HOME" ]]; then
+    echo "Refusing to expose the broad directory: $task_repo" >&2
+    exit 1
+fi
+
+exec docker run --rm -it \
+    --init \
+    --read-only \
+    --cap-drop ALL \
+    --security-opt no-new-privileges \
+    --tmpfs "/tmp:rw,nosuid,nodev,uid=${task_uid},gid=${task_gid}" \
+    --tmpfs "/home/oscar/.cache:rw,nosuid,nodev,uid=${task_uid},gid=${task_gid}" \
+    --mount "type=bind,source=${task_repo},target=${task_repo}" \
+    --mount "type=bind,source=/home/oscar/.codex,target=/home/oscar/.codex" \
+    --mount "type=bind,source=/home/oscar/.config/agent-skill-manager,target=/home/oscar/.config/agent-skill-manager" \
+    --mount "type=bind,source=/home/oscar/.cache/codex-runtimes,target=/home/oscar/.cache/codex-runtimes" \
+    --mount "type=volume,source=codex-isolated-uv-cache,target=/home/oscar/.cache/uv" \
+    --mount "type=volume,source=codex-isolated-uv-data,target=/home/oscar/.local/share/uv" \
+    --mount "type=bind,source=/usr/lib/chatgpt/resources,target=/usr/lib/chatgpt/resources,readonly" \
+    --env HOME=/home/oscar \
+    --env CODEX_HOME=/home/oscar/.codex \
+    --workdir "${task_repo}" \
+    codex-isolated --sandbox danger-full-access "$@"
