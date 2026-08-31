@@ -73,8 +73,13 @@ The launcher starts Docker with:
   project trust and project-specific configuration.
 - No Docker socket, parent workspace, sibling repository, SSH directory, or
   general home-directory mount.
+- `COLORTERM`, `TERM`, `TERM_PROGRAM`, and `TERM_PROGRAM_VERSION` are forwarded
+  so terminal-aware behavior sees the same WezTerm environment as native Codex.
+- Codex TUI notifications are enabled with the OSC 9 method and the `always`
+  condition. WezTerm translates the escape sequence into an Ubuntu desktop
+  notification without exposing the host D-Bus socket to the container.
 - `WEZTERM_PANE` and `TMUX` are forwarded as environment markers so lifecycle
-  hook notifications reach the originating terminal pane.
+  hook state updates reach the originating terminal pane.
 
 Codex is invoked with its inner sandbox disabled because Bubblewrap cannot
 create a second user namespace within the hardened Docker container. The
@@ -131,6 +136,7 @@ The following behavior was tested successfully:
 - The full configured status line appears, including model/reasoning, five-hour
   allowance, weekly allowance, project, approval mode, and context information.
 - The Bubblewrap warning no longer appears.
+- Turn completion notifications use WezTerm's OSC 9 desktop-notification path.
 - All configured MCP servers initialize without startup warnings after the
   `uvx` runtime volumes were added.
 - Python tests run with the image-provided pytest, and a PyQt 5 widget can be

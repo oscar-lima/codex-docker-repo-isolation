@@ -40,13 +40,36 @@ docker run --rm \
 '
 
 docker run --rm \
+    --env COLORTERM=truecolor \
+    --env TERM=xterm-256color \
+    --env TERM_PROGRAM=WezTerm \
+    --env TERM_PROGRAM_VERSION=verification \
     --env WEZTERM_PANE=verification \
     --env TMUX=verification \
     --entrypoint /bin/sh \
     codex-isolated -c '
+        test "$COLORTERM" = truecolor
+        test "$TERM" = xterm-256color
+        test "$TERM_PROGRAM" = WezTerm
+        test "$TERM_PROGRAM_VERSION" = verification
         test "$WEZTERM_PANE" = verification
         test "$TMUX" = verification
     '
+
+# Make Codex validate the isolated-only notification settings against the
+# installed CLI version. The command does not need authentication or a session.
+docker run --rm \
+    --entrypoint codex \
+    codex-isolated \
+    -c 'tui.notifications=true' \
+    -c 'tui.notification_method="osc9"' \
+    -c 'tui.notification_condition="always"' \
+    features list >/dev/null
+
+rg -F -- '--env TERM_PROGRAM' "$launcher" >/dev/null
+rg -F -- 'tui.notifications=true' "$launcher" >/dev/null
+rg -F -- 'tui.notification_method="osc9"' "$launcher" >/dev/null
+rg -F -- 'tui.notification_condition="always"' "$launcher" >/dev/null
 
 cmp -s "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)/bin/codex-isolated" "$launcher" || {
     echo "Installed launcher differs from the repository source; run ./install.sh" >&2

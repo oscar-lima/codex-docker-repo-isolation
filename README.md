@@ -45,10 +45,17 @@ codex-isolated
 Arguments are forwarded to Codex. The launcher refuses `/` and the user's home
 directory because either would expose an excessively broad host tree.
 
-When launched from WezTerm, the launcher forwards `WEZTERM_PANE` so the shared
-Codex lifecycle hooks can update the pane's running, attention, and completed
-indicators. It also forwards `TMUX` as a marker so the helper uses tmux's OSC
-passthrough form when Codex is launched from a tmux session.
+When launched from WezTerm, the launcher forces Codex's native OSC 9
+notifications on for every completed turn. WezTerm converts those terminal
+sequences into Ubuntu desktop notifications, so neither `notify-send` nor
+access to the host D-Bus socket is needed inside the container. Terminal
+identity variables are forwarded as well. User-provided `-c` arguments come
+after these defaults and can override them.
+
+The launcher also forwards `WEZTERM_PANE` so the shared Codex lifecycle hooks
+can update the pane's running, attention, and completed indicators. It forwards
+`TMUX` as a marker so the helper uses tmux's OSC passthrough form when Codex is
+launched from a tmux session.
 
 ## Security boundary
 
