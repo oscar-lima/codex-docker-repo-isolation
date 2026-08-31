@@ -47,7 +47,8 @@ container described below supplies the enforceable host-filesystem boundary.
 - Dockerfile source: `Dockerfile` in this repository
 - Base image: Alpine Linux with Node.js 22
 - Added runtime packages: Bash, Bubblewrap, GNU coreutils and findutils, Git,
-  `jq`, Python 3, PyYAML, pytest, PyQt 5, ripgrep, Ruby, and `uv`/`uvx`
+  `jq`, `notify-send`, Python 3, PyYAML, pytest, PyQt 5, ripgrep, Ruby, and
+  `uv`/`uvx`
 - Included helper: `wezterm-agent-state`, for the shared Codex status hooks
 - Included wrapper: `code-review-graph`, dispatched through `uvx`
 
@@ -77,7 +78,15 @@ The launcher starts Docker with:
   so terminal-aware behavior sees the same WezTerm environment as native Codex.
 - Codex TUI notifications are enabled with the OSC 9 method and the `always`
   condition. WezTerm translates the escape sequence into an Ubuntu desktop
-  notification without exposing the host D-Bus socket to the container.
+  notification.
+- When the desktop session bus exists, only its per-user socket and the host
+  machine ID are mounted. This lets the real `notify-send` client behave as it
+  does outside the container. The session bus can reach other user services,
+  so this is an intentional exception to the repository-only boundary.
+- The default Docker AppArmor profile is disabled only when that desktop bus is
+  attached because Ubuntu otherwise rejects the D-Bus handshake. Mount
+  isolation, a read-only root, dropped capabilities, and `no-new-privileges`
+  continue to enforce the filesystem boundary.
 - `WEZTERM_PANE` and `TMUX` are forwarded as environment markers so lifecycle
   hook state updates reach the originating terminal pane.
 
@@ -98,6 +107,8 @@ specific host paths:
 - `~/.cache/codex-runtimes` read/write: installed Codex runtime/plugin cache.
 - `/usr/lib/chatgpt/resources` read-only: configured ChatGPT/Codex runtime
   executables such as the Node REPL.
+- `/run/user/<uid>/bus` and `/etc/machine-id` read-only when a desktop session
+  bus is present: native Linux desktop notification access for `notify-send`.
 
 `HOME` and `CODEX_HOME` inside the container point to `/home/oscar` and
 `/home/oscar/.codex`, matching the host configuration and its absolute paths.
@@ -137,6 +148,8 @@ The following behavior was tested successfully:
   allowance, weekly allowance, project, approval mode, and context information.
 - The Bubblewrap warning no longer appears.
 - Turn completion notifications use WezTerm's OSC 9 desktop-notification path.
+- `notify-send` is installed and can reach the Ubuntu notification service via
+  the current user's D-Bus session socket.
 - All configured MCP servers initialize without startup warnings after the
   `uvx` runtime volumes were added.
 - Python tests run with the image-provided pytest, and a PyQt 5 widget can be

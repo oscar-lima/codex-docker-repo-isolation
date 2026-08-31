@@ -4,6 +4,18 @@ set -euo pipefail
 task_repo="$(pwd -P)"
 task_uid="$(id -u)"
 task_gid="$(id -g)"
+notification_bus="/run/user/${task_uid}/bus"
+desktop_notification_args=()
+
+if [[ -S "$notification_bus" && -r /etc/machine-id ]]; then
+    desktop_notification_args=(
+        --mount "type=bind,source=${notification_bus},target=${notification_bus}"
+        --mount "type=bind,source=/etc/machine-id,target=/etc/machine-id,readonly"
+        --env "DBUS_SESSION_BUS_ADDRESS=unix:path=${notification_bus}"
+        --env "XDG_RUNTIME_DIR=/run/user/${task_uid}"
+        --security-opt apparmor=unconfined
+    )
+fi
 
 # Codex's automatic notification mode cannot identify WezTerm after crossing
 # the Docker boundary. Force its native OSC 9 path so WezTerm can turn turn
@@ -35,6 +47,7 @@ exec docker run --rm -it \
     --mount "type=volume,source=codex-isolated-uv-cache,target=/home/oscar/.cache/uv" \
     --mount "type=volume,source=codex-isolated-uv-data,target=/home/oscar/.local/share/uv" \
     --mount "type=bind,source=/usr/lib/chatgpt/resources,target=/usr/lib/chatgpt/resources,readonly" \
+    "${desktop_notification_args[@]}" \
     --env HOME=/home/oscar \
     --env CODEX_HOME=/home/oscar/.codex \
     --env COLORTERM \

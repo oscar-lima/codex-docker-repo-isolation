@@ -13,6 +13,7 @@ RUN addgroup -g "${GROUP_ID}" codex \
        findutils \
        git \
        jq \
+       libnotify \
        py3-pytest \
        py3-qt5 \
        py3-yaml \
@@ -22,7 +23,9 @@ RUN addgroup -g "${GROUP_ID}" codex \
        uv \
     && npm install --global "@openai/codex@${CODEX_VERSION}" \
     && install -d -o "${USER_ID}" -g "${GROUP_ID}" \
-       /home/codex/.codex /home/codex/.cache
+       /home/codex/.codex /home/codex/.cache \
+       "/run/user/${USER_ID}" \
+    && touch /etc/machine-id
 
 COPY --chmod=0755 scripts/wezterm-agent-state /usr/local/bin/wezterm-agent-state
 COPY --chmod=0755 scripts/code-review-graph /usr/local/bin/code-review-graph

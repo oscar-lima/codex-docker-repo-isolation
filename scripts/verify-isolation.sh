@@ -25,6 +25,7 @@ docker run --rm \
     find --version >/dev/null
     command -v git >/dev/null
     command -v jq >/dev/null
+    command -v notify-send >/dev/null
     command -v python3 >/dev/null
     python3 -c "import yaml" >/dev/null
     python3 -m pytest --version >/dev/null
@@ -67,6 +68,9 @@ docker run --rm \
     features list >/dev/null
 
 rg -F -- '--env TERM_PROGRAM' "$launcher" >/dev/null
+rg -F -- 'DBUS_SESSION_BUS_ADDRESS=unix:path=' "$launcher" >/dev/null
+rg -F -- 'source=/etc/machine-id,target=/etc/machine-id,readonly' "$launcher" >/dev/null
+rg -F -- '--security-opt apparmor=unconfined' "$launcher" >/dev/null
 rg -F -- 'tui.notifications=true' "$launcher" >/dev/null
 rg -F -- 'tui.notification_method="osc9"' "$launcher" >/dev/null
 rg -F -- 'tui.notification_condition="always"' "$launcher" >/dev/null

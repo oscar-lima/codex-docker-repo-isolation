@@ -21,6 +21,7 @@ docker run --rm --entrypoint /bin/sh codex-isolated -c '
     find --version | head -n 1
     git --version
     jq --version
+    notify-send --version
     python3 --version
     python3 -c "import yaml; print(\"PyYAML \" + yaml.__version__)"
     python3 -m pytest --version
