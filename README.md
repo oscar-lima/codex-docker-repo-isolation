@@ -21,6 +21,7 @@ Its maintained source is [`bin/codex-isolated`](bin/codex-isolated).
 Requirements:
 
 - Docker Engine with permission to run containers.
+- Codex CLI installed on the host.
 - The expected host paths described under "Explicit host mounts" below.
 
 Run:
@@ -29,11 +30,14 @@ Run:
 ./install.sh
 ```
 
-This builds `codex-isolated`, installs the launcher under `~/.local/bin`, and
-creates the persistent `uv` volumes. The installation verifies that Codex,
-the baseline shell utilities, Git, Python tooling, PyQt 5 (using Qt's offscreen
-platform), Ruby, `uv`, and both configured hook commands are available in the
-new image before installing the launcher.
+This reads the installed host Codex version and builds `codex-isolated` with
+that exact version, installs the launcher under `~/.local/bin`, and creates the
+persistent `uv` volumes. Running `./install.sh` again after updating Codex on
+the host therefore rebuilds isolated Codex at the same version. The installation
+verifies that the host and isolated versions match and that the baseline shell
+utilities, Git, Python tooling, PyQt 5 (using Qt's offscreen platform), Ruby,
+`uv`, and both configured hook commands are available in the new image before
+installing the launcher.
 
 ## Use
 

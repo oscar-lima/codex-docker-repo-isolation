@@ -41,7 +41,7 @@ container described below supplies the enforceable host-filesystem boundary.
 ## Installed isolated CLI
 
 - Docker image: `codex-isolated`
-- Codex CLI version verified: `0.151.0`
+- Codex CLI version: detected from the host and verified after every image build
 - Installed launcher: `/home/oscar/.local/bin/codex-isolated`
 - Launcher source: `bin/codex-isolated` in this repository
 - Dockerfile source: `Dockerfile` in this repository

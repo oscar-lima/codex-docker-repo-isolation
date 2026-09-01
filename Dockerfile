@@ -2,7 +2,7 @@ FROM node:22-alpine
 
 ARG USER_ID=1001
 ARG GROUP_ID=1001
-ARG CODEX_VERSION=0.151.0
+ARG CODEX_VERSION
 
 RUN addgroup -g "${GROUP_ID}" codex \
     && adduser -D -u "${USER_ID}" -G codex codex \
@@ -21,6 +21,7 @@ RUN addgroup -g "${GROUP_ID}" codex \
        ripgrep \
        ruby \
        uv \
+    && test -n "${CODEX_VERSION}" \
     && npm install --global "@openai/codex@${CODEX_VERSION}" \
     && install -d -o "${USER_ID}" -g "${GROUP_ID}" \
        /home/codex/.codex /home/codex/.cache \

@@ -9,9 +9,25 @@ command -v docker >/dev/null || {
     exit 1
 }
 
+command -v codex >/dev/null || {
+    echo "the host Codex CLI is required" >&2
+    exit 1
+}
+
+host_codex_version_output="$(codex --version)"
+if [[ "$host_codex_version_output" =~ ^codex-cli[[:space:]]+([^[:space:]]+)$ ]]; then
+    host_codex_version="${BASH_REMATCH[1]}"
+else
+    echo "Unable to determine the host Codex version from: $host_codex_version_output" >&2
+    exit 1
+fi
+
+echo "Building isolated Codex ${host_codex_version} to match the host CLI."
+
 docker build \
     --build-arg "USER_ID=$(id -u)" \
     --build-arg "GROUP_ID=$(id -g)" \
+    --build-arg "CODEX_VERSION=${host_codex_version}" \
     --tag codex-isolated \
     "${project_dir}"
 
@@ -38,9 +54,20 @@ docker run --rm --entrypoint /bin/sh codex-isolated -c '
     codex --version
 '
 
+isolated_codex_version_output="$(
+    docker run --rm codex-isolated --version
+)"
+if [[ "$isolated_codex_version_output" != "$host_codex_version_output" ]]; then
+    echo "Codex version mismatch after build:" >&2
+    echo "  host:     $host_codex_version_output" >&2
+    echo "  isolated: $isolated_codex_version_output" >&2
+    exit 1
+fi
+
 install -D -m 0755 "${project_dir}/bin/codex-isolated" "${launcher_target}"
 docker volume create codex-isolated-uv-cache >/dev/null
 docker volume create codex-isolated-uv-data >/dev/null
 
 echo "Installed launcher: ${launcher_target}"
 echo "Installed Docker image: codex-isolated"
+echo "Codex version: ${host_codex_version} (matches host)"
