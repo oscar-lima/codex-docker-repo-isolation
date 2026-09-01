@@ -61,6 +61,16 @@ codex-isolated
 
 The launcher refuses to expose `/` or the entire home directory.
 
+Additional reference files or directories can be exposed read-only by setting
+`CODEX_READ_ONLY_PATHS` to a colon-separated list of existing absolute paths:
+
+```bash
+CODEX_READ_ONLY_PATHS=/path/to/docs:/path/to/reference-data codex-isolated
+```
+
+Empty and duplicate entries are harmless. Relative paths, nonexistent paths,
+`/`, and the entire home directory are rejected before Docker starts.
+
 ## Enforced container boundary
 
 The launcher starts Docker with:
@@ -107,6 +117,8 @@ specific host paths:
 - `~/.cache/codex-runtimes` read/write: installed Codex runtime/plugin cache.
 - `/usr/lib/chatgpt/resources` read-only: configured ChatGPT/Codex runtime
   executables such as the Node REPL.
+- Any existing absolute paths named in `CODEX_READ_ONLY_PATHS`, mounted
+  read-only at the same locations inside the container.
 - `/run/user/<uid>/bus` and `/etc/machine-id` read-only when a desktop session
   bus is present: native Linux desktop notification access for `notify-send`.
 

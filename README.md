@@ -45,6 +45,19 @@ codex-isolated
 Arguments are forwarded to Codex. The launcher refuses `/` and the user's home
 directory because either would expose an excessively broad host tree.
 
+Set `CODEX_READ_ONLY_PATHS` to a colon-separated list of additional absolute
+host paths that Codex should be able to read but not modify. Each existing file
+or directory is mounted at the same absolute path inside the container:
+
+```bash
+CODEX_READ_ONLY_PATHS=/path/to/docs:/path/to/reference-data codex-isolated
+```
+
+Empty list entries are ignored, duplicate paths are mounted once, and relative
+or nonexistent paths cause the launcher to stop. The launcher also refuses `/`
+and the user's entire home directory in this list. As with `PATH`, a colon is
+the separator and therefore cannot be part of an entry.
+
 When launched from WezTerm, the launcher forces Codex's native OSC 9
 notifications on for every completed turn. WezTerm converts those terminal
 sequences into Ubuntu desktop notifications. Terminal identity variables are
@@ -89,6 +102,8 @@ Anything explicitly mounted into the container remains visible to Codex.
   resolves.
 - `~/.cache/codex-runtimes`: read/write for Codex runtime/plugin artifacts.
 - `/usr/lib/chatgpt/resources`: read-only for configured runtime executables.
+- Paths listed in `CODEX_READ_ONLY_PATHS`: read-only, at their original absolute
+  locations.
 - `/run/user/<uid>/bus`: the current user's D-Bus session socket, when present,
   so commands such as `notify-send` can reach the desktop notification service.
 - `/etc/machine-id`: read-only when the session bus is mounted, because D-Bus

@@ -74,6 +74,8 @@ rg -F -- '--security-opt apparmor=unconfined' "$launcher" >/dev/null
 rg -F -- 'tui.notifications=true' "$launcher" >/dev/null
 rg -F -- 'tui.notification_method="osc9"' "$launcher" >/dev/null
 rg -F -- 'tui.notification_condition="always"' "$launcher" >/dev/null
+rg -F -- 'CODEX_READ_ONLY_PATHS' "$launcher" >/dev/null
+rg -F -- '--volume "${normalized_read_only_path}:${normalized_read_only_path}:ro"' "$launcher" >/dev/null
 
 cmp -s "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)/bin/codex-isolated" "$launcher" || {
     echo "Installed launcher differs from the repository source; run ./install.sh" >&2

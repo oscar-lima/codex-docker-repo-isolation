@@ -4,8 +4,40 @@ set -euo pipefail
 task_repo="$(pwd -P)"
 task_uid="$(id -u)"
 task_gid="$(id -g)"
+task_home="$(realpath -e -- "$HOME")"
 notification_bus="/run/user/${task_uid}/bus"
 desktop_notification_args=()
+read_only_mount_args=()
+
+if [[ -n "${CODEX_READ_ONLY_PATHS:-}" ]]; then
+    IFS=: read -r -a configured_read_only_paths <<< "$CODEX_READ_ONLY_PATHS"
+    declare -A mounted_read_only_paths=()
+
+    for read_only_path in "${configured_read_only_paths[@]}"; do
+        [[ -n "$read_only_path" ]] || continue
+
+        if [[ "$read_only_path" != /* ]]; then
+            echo "CODEX_READ_ONLY_PATHS entries must be absolute: $read_only_path" >&2
+            exit 1
+        fi
+        if [[ ! -e "$read_only_path" ]]; then
+            echo "CODEX_READ_ONLY_PATHS entry does not exist: $read_only_path" >&2
+            exit 1
+        fi
+        normalized_read_only_path="$(realpath -m -s -- "$read_only_path")"
+        resolved_read_only_path="$(realpath -e -- "$read_only_path")"
+        if [[ "$resolved_read_only_path" == "/" || "$resolved_read_only_path" == "$task_home" ]]; then
+            echo "Refusing to expose the broad read-only path: $read_only_path" >&2
+            exit 1
+        fi
+        [[ -z "${mounted_read_only_paths[$normalized_read_only_path]:-}" ]] || continue
+
+        read_only_mount_args+=(
+            --volume "${normalized_read_only_path}:${normalized_read_only_path}:ro"
+        )
+        mounted_read_only_paths["$normalized_read_only_path"]=1
+    done
+fi
 
 if [[ -S "$notification_bus" && -r /etc/machine-id ]]; then
     desktop_notification_args=(
@@ -47,6 +79,7 @@ exec docker run --rm -it \
     --mount "type=volume,source=codex-isolated-uv-cache,target=/home/oscar/.cache/uv" \
     --mount "type=volume,source=codex-isolated-uv-data,target=/home/oscar/.local/share/uv" \
     --mount "type=bind,source=/usr/lib/chatgpt/resources,target=/usr/lib/chatgpt/resources,readonly" \
+    "${read_only_mount_args[@]}" \
     "${desktop_notification_args[@]}" \
     --env HOME=/home/oscar \
     --env CODEX_HOME=/home/oscar/.codex \
