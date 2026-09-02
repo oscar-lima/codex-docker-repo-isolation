@@ -33,12 +33,18 @@ docker build \
 
 docker run --rm --entrypoint /bin/sh codex-isolated -c '
     set -eu
+    ! command -v docker >/dev/null
     bash --version | head -n 1
     find --version | head -n 1
     git --version
+    identify -version | head -n 1
     jq --version
     notify-send --version
     python3 --version
+    python3 -m pip --version
+    python3 -c "import build; print(\"build \" + build.__version__)"
+    python3 -c "import setuptools; print(\"setuptools \" + setuptools.__version__)"
+    python3 -c "import wheel; print(\"wheel \" + wheel.__version__)"
     python3 -c "import yaml; print(\"PyYAML \" + yaml.__version__)"
     python3 -m pytest --version
     qt_runtime_dir="$(mktemp -d)"
@@ -48,6 +54,7 @@ docker run --rm --entrypoint /bin/sh codex-isolated -c '
     rg --version | head -n 1
     ruby --version
     ruby -e "require \"yaml\""
+    unzip -v | head -n 1
     uv --version
     command -v code-review-graph
     wezterm-agent-state running

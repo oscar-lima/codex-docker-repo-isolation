@@ -30,14 +30,19 @@ Run:
 ./install.sh
 ```
 
+Run this command on the host, not from an existing `codex-isolated` session.
+The isolated image intentionally has no Docker client or host Docker socket;
+exposing the socket would let processes in the container control the host and
+would defeat the isolation boundary.
+
 This reads the installed host Codex version and builds `codex-isolated` with
 that exact version, installs the launcher under `~/.local/bin`, and creates the
 persistent `uv` volumes. Running `./install.sh` again after updating Codex on
 the host therefore rebuilds isolated Codex at the same version. The installation
 verifies that the host and isolated versions match and that the baseline shell
-utilities, Git, Python tooling, PyQt 5 (using Qt's offscreen platform), Ruby,
-`uv`, and both configured hook commands are available in the new image before
-installing the launcher.
+utilities, Git, ImageMagick, Python test and package-build tooling, PyQt 5
+(using Qt's offscreen platform), Ruby, `unzip`, `uv`, and both configured hook
+commands are available in the new image before installing the launcher.
 
 ## Use
 
@@ -96,6 +101,8 @@ hardened Docker sandbox. Docker is therefore the enforcement boundary.
 
 This setup restricts host filesystem visibility; it is not a network sandbox.
 Anything explicitly mounted into the container remains visible to Codex.
+The Docker control socket is deliberately not mounted, so an isolated session
+cannot build, replace, or start containers on its host.
 
 ## Explicit host mounts
 
@@ -122,11 +129,13 @@ The `codex-isolated-uv-cache` and `codex-isolated-uv-data` Docker volumes retain
 container-compatible Python MCP runtime data without sharing incompatible host
 artifacts.
 
-The image includes Bash, GNU coreutils and findutils, Git, `jq`, `notify-send`,
-Python 3, PyYAML, pytest, PyQt 5, ripgrep, Ruby with YAML support, and a
-container-local copy of the `wezterm-agent-state` helper. PyQt 5 makes headless
-GUI checks possible with `QT_QPA_PLATFORM=offscreen`. Git is required by
-repository-aware hooks, while the helper lets the shared hook configuration
+The image includes Bash, GNU coreutils and findutils, Git, ImageMagick, `jq`,
+`notify-send`, Python 3, PyYAML, pip, setuptools, build, wheel, pytest, PyQt 5,
+ripgrep, Ruby with YAML support, `unzip`, and a container-local copy of the
+`wezterm-agent-state` helper. PyQt 5 makes headless GUI checks possible with
+`QT_QPA_PLATFORM=offscreen`. The Python packaging tools support inspecting and
+building project wheels without modifying the read-only image. Git is required
+by repository-aware hooks, while the helper lets the shared hook configuration
 update WezTerm status without mounting the host's full WezTerm configuration
 directory.
 

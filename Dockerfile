@@ -12,14 +12,20 @@ RUN addgroup -g "${GROUP_ID}" codex \
        coreutils \
        findutils \
        git \
+       imagemagick \
        jq \
        libnotify \
+       py3-build \
+       py3-pip \
        py3-pytest \
        py3-qt5 \
+       py3-setuptools \
+       py3-wheel \
        py3-yaml \
        python3 \
        ripgrep \
        ruby \
+       unzip \
        uv \
     && test -n "${CODEX_VERSION}" \
     && npm install --global "@openai/codex@${CODEX_VERSION}" \

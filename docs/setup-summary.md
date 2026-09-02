@@ -47,8 +47,8 @@ container described below supplies the enforceable host-filesystem boundary.
 - Dockerfile source: `Dockerfile` in this repository
 - Base image: Alpine Linux with Node.js 22
 - Added runtime packages: Bash, Bubblewrap, GNU coreutils and findutils, Git,
-  `jq`, `notify-send`, Python 3, PyYAML, pytest, PyQt 5, ripgrep, Ruby, and
-  `uv`/`uvx`
+  ImageMagick, `jq`, `notify-send`, Python 3, PyYAML, pip, setuptools, build,
+  wheel, pytest, PyQt 5, ripgrep, Ruby, `unzip`, and `uv`/`uvx`
 - Included helper: `wezterm-agent-state`, for the shared Codex status hooks
 - Included wrapper: `code-review-graph`, dispatched through `uvx`
 
@@ -84,6 +84,9 @@ The launcher starts Docker with:
   project trust and project-specific configuration.
 - No Docker socket, parent workspace, sibling repository, SSH directory, or
   general home-directory mount.
+- No Docker client in the image. Image installation and rebuilding remain
+  host-side operations because container access to the host Docker socket would
+  defeat the isolation boundary.
 - `COLORTERM`, `TERM`, `TERM_PROGRAM`, and `TERM_PROGRAM_VERSION` are forwarded
   so terminal-aware behavior sees the same WezTerm environment as native Codex.
 - Codex TUI notifications are enabled with the OSC 9 method and the `always`
