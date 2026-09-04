@@ -35,6 +35,7 @@ docker run --rm --entrypoint /bin/sh codex-isolated -c '
     set -eu
     ! command -v docker >/dev/null
     bash --version | head -n 1
+    curl --version | head -n 1
     find --version | head -n 1
     git --version
     identify -version | head -n 1

@@ -40,7 +40,7 @@ that exact version, installs the launcher under `~/.local/bin`, and creates the
 persistent `uv` volumes. Running `./install.sh` again after updating Codex on
 the host therefore rebuilds isolated Codex at the same version. The installation
 verifies that the host and isolated versions match and that the baseline shell
-utilities, Git, ImageMagick, Python test and package-build tooling, PyQt 5
+utilities, `curl`, Git, ImageMagick, Python test and package-build tooling, PyQt 5
 (using Qt's offscreen platform), Ruby, `unzip`, `uv`, and both configured hook
 commands are available in the new image before installing the launcher.
 
@@ -129,8 +129,8 @@ The `codex-isolated-uv-cache` and `codex-isolated-uv-data` Docker volumes retain
 container-compatible Python MCP runtime data without sharing incompatible host
 artifacts.
 
-The image includes Bash, GNU coreutils and findutils, Git, ImageMagick, `jq`,
-`notify-send`, Python 3, PyYAML, pip, setuptools, build, wheel, pytest, PyQt 5,
+The image includes Bash, GNU coreutils and findutils, `curl`, Git, ImageMagick,
+`jq`, `notify-send`, Python 3, PyYAML, pip, setuptools, build, wheel, pytest, PyQt 5,
 ripgrep, Ruby with YAML support, `unzip`, and a container-local copy of the
 `wezterm-agent-state` helper. PyQt 5 makes headless GUI checks possible with
 `QT_QPA_PLATFORM=offscreen`. The Python packaging tools support inspecting and

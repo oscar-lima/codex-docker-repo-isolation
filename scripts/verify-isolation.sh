@@ -24,6 +24,7 @@ docker run --rm \
     ! command -v docker >/dev/null
     test ! -S /var/run/docker.sock
     command -v bash >/dev/null
+    curl --version >/dev/null
     find --version >/dev/null
     command -v git >/dev/null
     command -v identify >/dev/null

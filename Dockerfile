@@ -10,6 +10,7 @@ RUN addgroup -g "${GROUP_ID}" codex \
        bash \
        bubblewrap \
        coreutils \
+       curl \
        findutils \
        git \
        imagemagick \
