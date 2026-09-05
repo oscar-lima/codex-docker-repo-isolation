@@ -6,8 +6,26 @@ task_uid="$(id -u)"
 task_gid="$(id -g)"
 task_home="$(realpath -e -- "$HOME")"
 notification_bus="/run/user/${task_uid}/bus"
+notification_proxy_dir=""
+notification_proxy_pid=""
 desktop_notification_args=()
 read_only_mount_args=()
+
+stop_notification_proxy() {
+    if [[ -n "$notification_proxy_pid" ]]; then
+        kill "$notification_proxy_pid" 2>/dev/null || true
+        wait "$notification_proxy_pid" 2>/dev/null || true
+        notification_proxy_pid=""
+    fi
+
+    if [[ -n "$notification_proxy_dir" ]]; then
+        rm -f -- "${notification_proxy_dir}/bus"
+        rmdir -- "$notification_proxy_dir" 2>/dev/null || true
+        notification_proxy_dir=""
+    fi
+}
+
+trap stop_notification_proxy EXIT
 
 if [[ -n "${CODEX_READ_ONLY_PATHS:-}" ]]; then
     IFS=: read -r -a configured_read_only_paths <<< "$CODEX_READ_ONLY_PATHS"
@@ -39,14 +57,37 @@ if [[ -n "${CODEX_READ_ONLY_PATHS:-}" ]]; then
     done
 fi
 
-if [[ -S "$notification_bus" && -r /etc/machine-id ]]; then
-    desktop_notification_args=(
-        --mount "type=bind,source=${notification_bus},target=${notification_bus}"
-        --mount "type=bind,source=/etc/machine-id,target=/etc/machine-id,readonly"
-        --env "DBUS_SESSION_BUS_ADDRESS=unix:path=${notification_bus}"
-        --env "XDG_RUNTIME_DIR=/run/user/${task_uid}"
-        --security-opt apparmor=unconfined
-    )
+if [[ -S "$notification_bus" ]]; then
+    if command -v xdg-dbus-proxy >/dev/null; then
+        notification_proxy_dir="$(mktemp -d "/run/user/${task_uid}/codex-isolated-dbus.XXXXXX")"
+        xdg-dbus-proxy \
+            "unix:path=${notification_bus}" \
+            "${notification_proxy_dir}/bus" \
+            --filter \
+            --call=org.freedesktop.Notifications=org.freedesktop.Notifications@/org/freedesktop/Notifications \
+            --broadcast=org.freedesktop.Notifications=org.freedesktop.Notifications@/org/freedesktop/Notifications &
+        notification_proxy_pid=$!
+
+        for ((proxy_attempt = 0; proxy_attempt < 100; proxy_attempt++)); do
+            [[ -S "${notification_proxy_dir}/bus" ]] && break
+            kill -0 "$notification_proxy_pid" 2>/dev/null || break
+            sleep 0.01
+        done
+
+        if [[ -S "${notification_proxy_dir}/bus" ]]; then
+            container_notification_dir="/run/user/${task_uid}/codex-isolated-dbus"
+            desktop_notification_args=(
+                --mount "type=bind,source=${notification_proxy_dir},target=${container_notification_dir},readonly"
+                --env "DBUS_SESSION_BUS_ADDRESS=unix:path=${container_notification_dir}/bus"
+                --env "XDG_RUNTIME_DIR=${container_notification_dir}"
+            )
+        else
+            echo "Warning: xdg-dbus-proxy failed; native notify-send access is disabled." >&2
+            stop_notification_proxy
+        fi
+    else
+        echo "Warning: xdg-dbus-proxy is unavailable; native notify-send access is disabled." >&2
+    fi
 fi
 
 # Codex's automatic notification mode cannot identify WezTerm after crossing
@@ -65,7 +106,7 @@ if [[ "$task_repo" == "/" || "$task_repo" == "$HOME" ]]; then
     exit 1
 fi
 
-exec docker run --rm -it \
+docker run --rm -it \
     --init \
     --read-only \
     --cap-drop ALL \

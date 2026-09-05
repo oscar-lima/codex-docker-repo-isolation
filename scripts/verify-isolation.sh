@@ -10,6 +10,13 @@ verification_gid="$(id -g)"
     exit 1
 }
 
+command -v xdg-dbus-proxy >/dev/null || {
+    echo "xdg-dbus-proxy is required on the host" >&2
+    exit 1
+}
+
+xdg-dbus-proxy --version >/dev/null
+
 docker image inspect codex-isolated >/dev/null
 docker volume inspect codex-isolated-uv-cache codex-isolated-uv-data >/dev/null
 
@@ -34,6 +41,7 @@ docker run --rm \
     command -v git >/dev/null
     command -v identify >/dev/null
     command -v jq >/dev/null
+    grep -Eq "^[0-9a-f]{32}$" /etc/machine-id
     command -v notify-send >/dev/null
     command -v python3 >/dev/null
     python3 -m pip --version >/dev/null
@@ -86,13 +94,30 @@ docker run --rm \
     features list >/dev/null
 
 rg -F -- '--env TERM_PROGRAM' "$launcher" >/dev/null
+rg -F -- 'xdg-dbus-proxy' "$launcher" >/dev/null
+rg -F -- '--filter' "$launcher" >/dev/null
+rg -F -- '--call=org.freedesktop.Notifications=org.freedesktop.Notifications@/org/freedesktop/Notifications' "$launcher" >/dev/null
+rg -F -- '--broadcast=org.freedesktop.Notifications=org.freedesktop.Notifications@/org/freedesktop/Notifications' "$launcher" >/dev/null
 rg -F -- 'DBUS_SESSION_BUS_ADDRESS=unix:path=' "$launcher" >/dev/null
-rg -F -- 'source=/etc/machine-id,target=/etc/machine-id,readonly' "$launcher" >/dev/null
+if rg -F -- 'source=${notification_bus}' "$launcher" >/dev/null; then
+    echo "Launcher exposes the unfiltered host D-Bus session socket." >&2
+    exit 1
+fi
+if rg -F -- 'source=/etc/machine-id' "$launcher" >/dev/null; then
+    echo "Launcher exposes the host machine ID." >&2
+    exit 1
+fi
 rg -F -- 'source=/usr/lib/chatgpt/resources/codex,target=/usr/lib/chatgpt/resources/codex,readonly' "$launcher" >/dev/null
 rg -F -- 'source=/usr/lib/chatgpt/resources/cua_node/bin/node_repl,target=/usr/lib/chatgpt/resources/cua_node/bin/node_repl,readonly' "$launcher" >/dev/null
 rg -F -- 'source=/usr/lib/chatgpt/resources/cua_node/lib/node_modules,target=/usr/lib/chatgpt/resources/cua_node/lib/node_modules,readonly' "$launcher" >/dev/null
-! rg -F -- 'source=/usr/lib/chatgpt/resources,target=/usr/lib/chatgpt/resources,readonly' "$launcher" >/dev/null
-rg -F -- '--security-opt apparmor=unconfined' "$launcher" >/dev/null
+if rg -F -- 'source=/usr/lib/chatgpt/resources,target=/usr/lib/chatgpt/resources,readonly' "$launcher" >/dev/null; then
+    echo "Launcher exposes the full host resources directory." >&2
+    exit 1
+fi
+if rg -F -- '--security-opt apparmor=unconfined' "$launcher" >/dev/null; then
+    echo "Launcher disables the default Docker AppArmor profile." >&2
+    exit 1
+fi
 rg -F -- 'tui.notifications=true' "$launcher" >/dev/null
 rg -F -- 'tui.notification_method="osc9"' "$launcher" >/dev/null
 rg -F -- 'tui.notification_condition="always"' "$launcher" >/dev/null

@@ -14,6 +14,14 @@ command -v codex >/dev/null || {
     exit 1
 }
 
+command -v xdg-dbus-proxy >/dev/null || {
+    echo "xdg-dbus-proxy is required for filtered desktop notification access" >&2
+    echo "Install the Ubuntu package with: sudo apt install xdg-dbus-proxy" >&2
+    exit 1
+}
+
+xdg-dbus-proxy --version >/dev/null
+
 host_codex_version_output="$(codex --version)"
 if [[ "$host_codex_version_output" =~ ^codex-cli[[:space:]]+([^[:space:]]+)$ ]]; then
     host_codex_version="${BASH_REMATCH[1]}"
@@ -47,6 +55,7 @@ docker run --rm \
     git --version
     identify -version | head -n 1
     jq --version
+    grep -Eq "^[0-9a-f]{32}$" /etc/machine-id
     notify-send --version
     python3 --version
     python3 -m pip --version

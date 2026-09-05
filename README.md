@@ -22,6 +22,7 @@ Requirements:
 
 - Docker Engine with permission to run containers.
 - Codex CLI installed on the host.
+- `xdg-dbus-proxy` installed on the host (the Ubuntu package has the same name).
 - The expected host paths described under "Explicit host mounts" below.
 
 Run:
@@ -78,15 +79,13 @@ forwarded as well. User-provided `-c` arguments come after these defaults and
 can override them.
 
 For explicit notification commands, the image also includes the real
-`notify-send` client. When the standard per-user D-Bus socket and host machine
-ID are available, the launcher mounts those two endpoints and sets
-`DBUS_SESSION_BUS_ADDRESS` and `XDG_RUNTIME_DIR`. Thus `notify-send hi` behaves
-as it does in the native Codex CLI. The mounts are omitted automatically in
-SSH, CI, or other sessions where the desktop notification bus is unavailable.
-Ubuntu's default Docker AppArmor profile blocks all session-bus clients, so the
-launcher also disables that profile when the bus is attached. The read-only
-root, dropped capabilities, `no-new-privileges`, and explicit filesystem mounts
-remain in force.
+`notify-send` client. When the standard per-user D-Bus socket is available, the
+launcher starts `xdg-dbus-proxy` on the host and mounts only its private socket.
+The proxy permits calls and broadcasts only on the
+`org.freedesktop.Notifications` interface at its standard object path. The
+original session bus is never mounted, and the container's default AppArmor
+profile remains enabled. Native notifications are omitted automatically when
+the desktop bus or proxy is unavailable, such as in SSH or CI sessions.
 
 The launcher also forwards `WEZTERM_PANE` so the shared Codex lifecycle hooks
 can update the pane's running, attention, and completed indicators. It forwards
@@ -124,15 +123,9 @@ cannot build, replace, or start containers on its host.
   REPL's packaged modules.
 - Paths listed in `CODEX_READ_ONLY_PATHS`: read-only, at their original absolute
   locations.
-- `/run/user/<uid>/bus`: the current user's D-Bus session socket, when present,
-  so commands such as `notify-send` can reach the desktop notification service.
-- `/etc/machine-id`: read-only when the session bus is mounted, because D-Bus
-  clients require the host machine identity.
-
-Access to the session bus is broader than access to the notification service
-alone: processes in the container can address other services registered on the
-same user bus. Supporting the native `notify-send` command therefore makes this
-an intentional exception to the otherwise repository-focused isolation model.
+- A per-launch `xdg-dbus-proxy` directory under `/run/user/<uid>`: read-only and
+  containing only the filtered notification socket. The host session-bus socket
+  and host machine ID are not exposed.
 
 The `codex-isolated-uv-cache` and `codex-isolated-uv-data` Docker volumes retain
 container-compatible Python MCP runtime data without sharing incompatible host

@@ -93,14 +93,13 @@ The launcher starts Docker with:
 - Codex TUI notifications are enabled with the OSC 9 method and the `always`
   condition. WezTerm translates the escape sequence into an Ubuntu desktop
   notification.
-- When the desktop session bus exists, only its per-user socket and the host
-  machine ID are mounted. This lets the real `notify-send` client behave as it
-  does outside the container. The session bus can reach other user services,
-  so this is an intentional exception to the repository-only boundary.
-- The default Docker AppArmor profile is disabled only when that desktop bus is
-  attached because Ubuntu otherwise rejects the D-Bus handshake. Mount
-  isolation, a read-only root, dropped capabilities, and `no-new-privileges`
-  continue to enforce the filesystem boundary.
+- When the desktop session bus exists, a host-side `xdg-dbus-proxy` exposes a
+  separate socket that permits only the standard desktop notification
+  interface and object path. Only the proxy directory is mounted read-only;
+  the real session bus and host machine ID remain hidden.
+- The default Docker AppArmor profile remains enabled. Mount isolation, a
+  read-only root, dropped capabilities, and `no-new-privileges` continue to
+  enforce the filesystem boundary.
 - `WEZTERM_PANE` and `TMUX` are forwarded as environment markers so lifecycle
   hook state updates reach the originating terminal pane.
 
@@ -127,8 +126,8 @@ specific host paths:
   modules used by the Node REPL.
 - Any existing absolute paths named in `CODEX_READ_ONLY_PATHS`, mounted
   read-only at the same locations inside the container.
-- `/run/user/<uid>/bus` and `/etc/machine-id` read-only when a desktop session
-  bus is present: native Linux desktop notification access for `notify-send`.
+- A per-launch directory below `/run/user/<uid>` read-only when a desktop
+  session bus is present: a filtered `xdg-dbus-proxy` socket for `notify-send`.
 
 The image provides its Alpine-native Node executable at the resource path used
 by MCP configuration. This keeps `cua_repl` from trying to launch the
@@ -173,8 +172,9 @@ The following behavior was tested successfully:
   allowance, weekly allowance, project, approval mode, and context information.
 - The Bubblewrap warning no longer appears.
 - Turn completion notifications use WezTerm's OSC 9 desktop-notification path.
-- `notify-send` is installed and can reach the Ubuntu notification service via
-  the current user's D-Bus session socket.
+- `notify-send` is installed. Host verification must confirm that it reaches
+  the Ubuntu notification service through the filtered proxy without exposing
+  the user's D-Bus session socket.
 - All configured MCP servers initialize without startup warnings after the
   `uvx` runtime volumes were added.
 - Python tests run with the image-provided pytest, and a PyQt 5 widget can be
