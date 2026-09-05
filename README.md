@@ -9,6 +9,7 @@ mounts needed to preserve the normal CLI experience.
 
 - Launcher script (the executable users run):
   `/home/oscar/.local/bin/codex-isolated`
+- Host notification relay: `/home/oscar/.local/bin/codex-wezterm-notify`
 - Docker image: `codex-isolated`
 - Shared Codex state: `/home/oscar/.codex`
 - Source repository: `/home/oscar/repos_cloned/codex-docker-repo-isolation`
@@ -22,6 +23,7 @@ Requirements:
 
 - Docker Engine with permission to run containers.
 - Codex CLI installed on the host.
+- Python 3 on the host for the installed notification relay.
 - `xdg-dbus-proxy` installed on the host (the Ubuntu package has the same name).
 - The expected host paths described under "Explicit host mounts" below.
 
@@ -37,17 +39,29 @@ exposing the socket would let processes in the container control the host and
 would defeat the isolation boundary.
 
 This reads the installed host Codex version and builds `codex-isolated` with
-that exact version, installs the launcher under `~/.local/bin`, and creates the
-persistent `uv` volumes. Running `./install.sh` again after updating Codex on
-the host therefore rebuilds isolated Codex at the same version. The installation
-verifies that the host and isolated versions match and that the baseline shell
-utilities, `curl`, Git, ImageMagick, XML and PDF utilities, Python test and
-package-build tooling, PyQt 5 (using Qt's offscreen platform), Ruby, ShellCheck, SQLite, `yq`,
-ZIP utilities, `uv`, and both configured hook commands are available in the new
-image before installing the launcher. It also executes the image-native Node at
+that exact version, installs the launcher and notification relay under
+`~/.local/bin`, and creates the persistent `uv` volumes. Running `./install.sh`
+again after updating Codex on the host therefore rebuilds isolated Codex at the
+same version. The installation verifies that the host and isolated versions
+match and that the baseline shell utilities, `curl`, Git, ImageMagick, XML and
+PDF utilities, Python test and package-build tooling, PyQt 5 (using Qt's
+offscreen platform), Ruby, ShellCheck, SQLite, `yq`, ZIP utilities, `uv`, and
+the configured hook commands are available in the new image before installing
+the host commands. It also executes the image-native Node at
 the path used by ChatGPT's MCP configuration and verifies that the mounted Node
 REPL is executable, catching compatibility failures that would prevent MCP
 servers such as `cua_repl` from starting.
+
+After source changes, rebuild and run the complete verification on the Docker
+host:
+
+```bash
+./install.sh
+./scripts/verify-isolation.sh
+```
+
+Do not run these commands from an existing isolated session; the absence of the
+Docker client there is intentional.
 
 ## Use
 
@@ -72,11 +86,29 @@ or nonexistent paths cause the launcher to stop. The launcher also refuses `/`
 and the user's entire home directory in this list. As with `PATH`, a colon is
 the separator and therefore cannot be part of an entry.
 
-When launched from WezTerm, the launcher forces Codex's native OSC 9
-notifications on for every completed turn. WezTerm converts those terminal
-sequences into Ubuntu desktop notifications. Terminal identity variables are
-forwarded as well. User-provided `-c` arguments come after these defaults and
-can override them.
+The shared Codex configuration invokes `codex-wezterm-notify` by command name:
+
+```toml
+notify = ["codex-wezterm-notify"]
+
+[tui]
+notifications = []
+```
+
+The image installs that command in `/usr/local/bin`, so it resolves from every
+mounted project without exposing the separate WezTerm configuration repository.
+The installer also puts a host copy in `~/.local/bin` for non-isolated Codex.
+Its maintained source is copied from the implementation in the separate,
+read-only `wezterm_config` repository.
+On turn completion, the relay writes an OSC 1337 user-variable request to the
+originating terminal. The host WezTerm configuration converts that request into
+a timed, clickable desktop notification named from the submitted task rather
+than the checkout directory. The stable Codex turn identity lets WezTerm ignore
+a replayed completion event when the next task starts. Built-in TUI alerts are
+disabled so approval or other lifecycle events do not produce an earlier
+desktop notification. `WEZTERM_PANE` and `TMUX` are forwarded as terminal
+identity markers; neither the WezTerm control socket nor a WezTerm host path is
+mounted.
 
 For explicit notification commands, the image also includes the real
 `notify-send` client. When the standard per-user D-Bus socket is available, the
@@ -104,8 +136,9 @@ hardened Docker sandbox. Docker is therefore the enforcement boundary.
 
 This setup restricts host filesystem visibility; it is not a network sandbox.
 Anything explicitly mounted into the container remains visible to Codex.
-The Docker control socket is deliberately not mounted, so an isolated session
-cannot build, replace, or start containers on its host.
+The Docker and WezTerm control sockets are deliberately not mounted, so an
+isolated session cannot control host containers or issue unrestricted WezTerm
+CLI commands.
 
 ## Explicit host mounts
 
@@ -134,17 +167,19 @@ artifacts.
 The image includes Bash, GNU coreutils and findutils, `curl`, Git, ImageMagick,
 `jq`, `notify-send`, `xmllint`, Python 3, NumPy, PyYAML, pip, setuptools, build,
 wheel, pytest, PyQt 5, ripgrep, Ruby with YAML support, ShellCheck, SQLite, `unzip`,
-`uv`, `yq`, ZIP, and Poppler PDF utilities, plus a container-local copy of the
-`wezterm-agent-state` helper. PyQt 5 makes headless GUI checks possible with
+`uv`, `yq`, ZIP, and Poppler PDF utilities, plus container-local copies of the
+`wezterm-agent-state` and `codex-wezterm-notify` helpers. The notification relay
+uses the existing terminal device for OSC transport, not a host socket or an
+additional filesystem mount. PyQt 5 makes headless GUI checks possible with
 `QT_QPA_PLATFORM=offscreen`. ShellCheck provides static analysis for shell
 scripts, `yq` provides structured YAML queries and edits, `xmllint` supports
 XML validation and queries, and Poppler supports PDF text and metadata inspection.
 The SQLite CLI supports direct, read-only
 inspection of repository and Codex state databases. The Python packaging tools
 support inspecting and building project wheels without modifying the read-only
-image. Git is required by repository-aware hooks, while the helper lets the
-shared hook configuration update WezTerm status without mounting the host's
-full WezTerm configuration directory.
+image. Git is required by repository-aware hooks, while the helpers let the
+shared hook and notification configuration update WezTerm without mounting the
+host's full WezTerm configuration directory or control socket.
 
 The image supplies Alpine's native Node executable at the path used by the
 ChatGPT-provided MCP configuration. Only the compatible Node REPL executable,

@@ -2,11 +2,27 @@
 set -euo pipefail
 
 launcher="${HOME}/.local/bin/codex-isolated"
+notification_relay="${HOME}/.local/bin/codex-wezterm-notify"
 verification_uid="$(id -u)"
 verification_gid="$(id -g)"
 
 [[ -x "$launcher" ]] || {
     echo "Missing executable launcher: $launcher" >&2
+    exit 1
+}
+
+[[ -x "$notification_relay" ]] || {
+    echo "Missing executable notification relay: $notification_relay" >&2
+    exit 1
+}
+
+resolved_notification_relay="$(command -v codex-wezterm-notify || true)"
+[[ -n "$resolved_notification_relay" ]] || {
+    echo "codex-wezterm-notify is not on the host PATH" >&2
+    exit 1
+}
+[[ "$(realpath -e -- "$resolved_notification_relay")" == "$(realpath -e -- "$notification_relay")" ]] || {
+    echo "codex-wezterm-notify resolves to an unexpected host command: $resolved_notification_relay" >&2
     exit 1
 }
 
@@ -32,7 +48,9 @@ docker run --rm \
     codex-isolated -c '
     set -eu
     ! command -v docker >/dev/null
+    ! command -v wezterm >/dev/null
     test ! -S /var/run/docker.sock
+    test -z "$(find /run/user -type s -iname "*wezterm*" -print -quit)"
     /usr/lib/chatgpt/resources/cua_node/bin/node --version >/dev/null
     /usr/lib/chatgpt/resources/cua_node/bin/node_repl --help >/dev/null
     command -v bash >/dev/null
@@ -64,6 +82,9 @@ docker run --rm \
     yq --version >/dev/null
     zip -v >/dev/null
     command -v code-review-graph >/dev/null
+    command -v codex-wezterm-notify >/dev/null
+    grep -F "SetUserVar=" "$(command -v codex-wezterm-notify)" >/dev/null
+    codex-wezterm-notify "{\"type\":\"smoke-test\"}"
     command -v wezterm-agent-state >/dev/null
 '
 
@@ -84,15 +105,24 @@ docker run --rm \
         test "$TMUX" = verification
     '
 
-# Make Codex validate the isolated-only notification settings against the
-# installed CLI version. The command does not need authentication or a session.
+# Make Codex validate the shared external notification configuration against
+# the installed CLI version. The command does not need authentication or a session.
 docker run --rm \
     --entrypoint codex \
     codex-isolated \
-    -c 'tui.notifications=true' \
-    -c 'tui.notification_method="osc9"' \
-    -c 'tui.notification_condition="always"' \
+    -c 'notify=["codex-wezterm-notify"]' \
+    -c 'tui.notifications=[]' \
     features list >/dev/null
+
+python3 -c '
+import pathlib
+import tomllib
+config = tomllib.loads(pathlib.Path.home().joinpath(".codex/config.toml").read_text())
+if config.get("notify") != ["codex-wezterm-notify"]:
+    raise SystemExit("~/.codex/config.toml must set notify = [\"codex-wezterm-notify\"]")
+if config.get("tui", {}).get("notifications") != []:
+    raise SystemExit("~/.codex/config.toml must set tui.notifications = []")
+'
 
 rg -F -- '--env TERM_PROGRAM' "$launcher" >/dev/null
 rg -F -- 'xdg-dbus-proxy' "$launcher" >/dev/null
@@ -102,6 +132,18 @@ rg -F -- '--broadcast=org.freedesktop.Notifications=org.freedesktop.Notification
 rg -F -- 'DBUS_SESSION_BUS_ADDRESS=unix:path=' "$launcher" >/dev/null
 if rg -F -- 'source=${notification_bus}' "$launcher" >/dev/null; then
     echo "Launcher exposes the unfiltered host D-Bus session socket." >&2
+    exit 1
+fi
+if rg -F -- '/var/run/docker.sock' "$launcher" >/dev/null; then
+    echo "Launcher exposes the host Docker socket." >&2
+    exit 1
+fi
+if rg -i -- '--mount.*wezterm|--volume.*wezterm|wezterm.*\.sock' "$launcher" >/dev/null; then
+    echo "Launcher exposes a host WezTerm control path." >&2
+    exit 1
+fi
+if rg -F -- 'WEZTERM_UNIX_SOCKET' "$launcher" >/dev/null; then
+    echo "Launcher forwards the host WezTerm control socket." >&2
     exit 1
 fi
 if rg -F -- 'source=/etc/machine-id' "$launcher" >/dev/null; then
@@ -119,16 +161,27 @@ if rg -F -- '--security-opt apparmor=unconfined' "$launcher" >/dev/null; then
     echo "Launcher disables the default Docker AppArmor profile." >&2
     exit 1
 fi
-rg -F -- 'tui.notifications=true' "$launcher" >/dev/null
-rg -F -- 'tui.notification_method="osc9"' "$launcher" >/dev/null
-rg -F -- 'tui.notification_condition="always"' "$launcher" >/dev/null
+rg -F -- 'codex-wezterm-notify relay' "$launcher" >/dev/null
+rg -F -- 'NOTIFICATION_VARIABLE = "codex_notification_request"' "$notification_relay" >/dev/null
+rg -F -- 'SetUserVar=' "$notification_relay" >/dev/null
+if rg -F -- 'tui.notification_method="osc9"' "$launcher" >/dev/null; then
+    echo "Launcher still overrides the external completion notification relay." >&2
+    exit 1
+fi
 rg -F -- 'CODEX_READ_ONLY_PATHS' "$launcher" >/dev/null
 rg -F -- '--volume "${normalized_read_only_path}:${normalized_read_only_path}:ro"' "$launcher" >/dev/null
+rg -F -- 'Refusing to expose the broad directory' "$launcher" >/dev/null
+rg -F -- 'Refusing to expose the broad read-only path' "$launcher" >/dev/null
 
 cmp -s "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)/bin/codex-isolated" "$launcher" || {
     echo "Installed launcher differs from the repository source; run ./install.sh" >&2
     exit 1
 }
 
-echo "Launcher, image, runtime commands, and volumes are present."
+cmp -s "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)/scripts/codex-wezterm-notify" "$notification_relay" || {
+    echo "Installed notification relay differs from the repository source; run ./install.sh" >&2
+    exit 1
+}
+
+echo "Launcher, notification relay, image, runtime commands, and volumes are present."
 echo "Run 'codex-isolated' from a non-sensitive test repository for interactive verification."

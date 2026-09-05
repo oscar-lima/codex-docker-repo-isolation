@@ -1,6 +1,6 @@
 # Isolated Codex Setup Summary
 
-Date: 31 August 2026
+Date: 5 September 2026
 
 ## Goal
 
@@ -22,8 +22,10 @@ The launcher users execute is installed at:
 /home/oscar/.local/bin/codex-isolated
 ```
 
-That installed executable is a Bash script. Its maintained repository source is
-`bin/codex-isolated`. The built Docker image is named `codex-isolated`.
+The host notification relay is installed at
+`/home/oscar/.local/bin/codex-wezterm-notify`. Their maintained repository
+sources are `bin/codex-isolated` and `scripts/codex-wezterm-notify`. The built
+Docker image is named `codex-isolated`.
 
 ## Global Codex instruction
 
@@ -52,7 +54,19 @@ container described below supplies the enforceable host-filesystem boundary.
   PyYAML, pip, setuptools, build, wheel, pytest, PyQt 5, ripgrep, Ruby,
   ShellCheck, SQLite, `unzip`, `uv`/`uvx`, `yq`, and ZIP
 - Included helper: `wezterm-agent-state`, for the shared Codex status hooks
+- Included notification relay: `codex-wezterm-notify`, for the shared Codex
+  external notification command
 - Included wrapper: `code-review-graph`, dispatched through `uvx`
+
+Image rebuilds and full verification are host-side operations:
+
+```bash
+./install.sh
+./scripts/verify-isolation.sh
+```
+
+An existing `codex-isolated` session intentionally cannot run either Docker
+workflow because it has no Docker client or Docker socket.
 
 Launch it from the repository that should be exposed:
 
@@ -84,16 +98,21 @@ The launcher starts Docker with:
 - Only the current repository mounted as project data.
 - The repository mounted at its original absolute host path, preserving Codex
   project trust and project-specific configuration.
-- No Docker socket, parent workspace, sibling repository, SSH directory, or
-  general home-directory mount.
+- No Docker socket, WezTerm control socket, parent workspace, sibling
+  repository, SSH directory, or general home-directory mount.
 - No Docker client in the image. Image installation and rebuilding remain
   host-side operations because container access to the host Docker socket would
   defeat the isolation boundary.
 - `COLORTERM`, `TERM`, `TERM_PROGRAM`, and `TERM_PROGRAM_VERSION` are forwarded
   so terminal-aware behavior sees the same WezTerm environment as native Codex.
-- Codex TUI notifications are enabled with the OSC 9 method and the `always`
-  condition. WezTerm translates the escape sequence into an Ubuntu desktop
-  notification.
+- The shared `notify = ["codex-wezterm-notify"]` configuration resolves the
+  image-installed command from any mounted project. It relays completion data
+  through an OSC 1337 user variable on the existing terminal connection.
+- `tui.notifications = []` disables earlier built-in alerts, so desktop
+  notifications are emitted only by the completion relay.
+- No WezTerm control socket or configuration path is mounted. The host WezTerm
+  process receives the OSC request and owns desktop notification and pane-focus
+  operations.
 - When the desktop session bus exists, a host-side `xdg-dbus-proxy` exposes a
   separate socket that permits only the standard desktop notification
   interface and object path. Only the proxy directory is mounted read-only;
@@ -137,6 +156,9 @@ compatible Node REPL binary and modules remain narrowly mounted read-only.
 
 `HOME` and `CODEX_HOME` inside the container point to `/home/oscar` and
 `/home/oscar/.codex`, matching the host configuration and its absolute paths.
+The notification configuration uses a PATH command rather than an absolute path
+to the separate WezTerm repository, so it resolves to
+`/usr/local/bin/codex-wezterm-notify` inside the image.
 
 Because `~/.codex` is a writable bind mount, changes made by either normal or
 isolated Codex to settings, skills, plugins, histories, or sessions are visible
@@ -158,9 +180,9 @@ write under `~/.local/share/uv`.
 The earlier `codex-isolated-home` volume still exists but is no longer used by
 the launcher because the host `~/.codex` directory is now shared directly.
 
-## Verification performed
+## Host verification checklist
 
-The following behavior was tested successfully:
+After rebuilding, `./scripts/verify-isolation.sh` checks the following behavior:
 
 - The selected repository is readable and writable.
 - Host `/home/oscar` is not generally visible inside the container.
@@ -172,7 +194,11 @@ The following behavior was tested successfully:
 - The full configured status line appears, including model/reasoning, five-hour
   allowance, weekly allowance, project, approval mode, and context information.
 - The Bubblewrap warning no longer appears.
-- Turn completion notifications use WezTerm's OSC 9 desktop-notification path.
+- Turn completion notifications use the image-installed
+  `codex-wezterm-notify` OSC 1337 relay, allowing the host WezTerm configuration
+  to identify the originating pane without a socket mount. Notification titles
+  are derived from the submitted task, and stable turn IDs allow the host to
+  suppress replayed completion events at the start of the next task.
 - `notify-send` is installed. Host verification must confirm that it reaches
   the Ubuntu notification service through the filtered proxy without exposing
   the user's D-Bus session socket.

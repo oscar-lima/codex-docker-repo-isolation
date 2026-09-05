@@ -90,15 +90,11 @@ if [[ -S "$notification_bus" ]]; then
     fi
 fi
 
-# Codex's automatic notification mode cannot identify WezTerm after crossing
-# the Docker boundary. Force its native OSC 9 path so WezTerm can turn turn
-# completions into Ubuntu desktop notifications without exposing the host D-Bus
-# socket. Keep these before user arguments so an explicit -c can override them.
+# The shared Codex configuration invokes the image-installed
+# codex-wezterm-notify relay. It sends completion requests through the existing
+# terminal with OSC 1337, so no WezTerm control socket needs to be mounted.
 codex_args=(
     --sandbox danger-full-access
-    -c 'tui.notifications=true'
-    -c 'tui.notification_method="osc9"'
-    -c 'tui.notification_condition="always"'
 )
 
 if [[ "$task_repo" == "/" || "$task_repo" == "$HOME" ]]; then

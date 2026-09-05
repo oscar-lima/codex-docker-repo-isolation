@@ -3,6 +3,7 @@ set -euo pipefail
 
 project_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 launcher_target="${HOME}/.local/bin/codex-isolated"
+notification_relay_target="${HOME}/.local/bin/codex-wezterm-notify"
 
 command -v docker >/dev/null || {
     echo "docker is required" >&2
@@ -11,6 +12,11 @@ command -v docker >/dev/null || {
 
 command -v codex >/dev/null || {
     echo "the host Codex CLI is required" >&2
+    exit 1
+}
+
+command -v python3 >/dev/null || {
+    echo "Python 3 is required for the host notification relay" >&2
     exit 1
 }
 
@@ -47,6 +53,7 @@ docker run --rm \
     codex-isolated -c '
     set -eu
     ! command -v docker >/dev/null
+    ! command -v wezterm >/dev/null
     /usr/lib/chatgpt/resources/cua_node/bin/node --version
     /usr/lib/chatgpt/resources/cua_node/bin/node_repl --help
     bash --version | head -n 1
@@ -81,6 +88,9 @@ docker run --rm \
     yq --version
     zip -v | head -n 1
     command -v code-review-graph
+    command -v codex-wezterm-notify
+    grep -F "SetUserVar=" "$(command -v codex-wezterm-notify)" >/dev/null
+    codex-wezterm-notify "{\"type\":\"smoke-test\"}"
     wezterm-agent-state running
     codex --version
 '
@@ -96,9 +106,12 @@ if [[ "$isolated_codex_version_output" != "$host_codex_version_output" ]]; then
 fi
 
 install -D -m 0755 "${project_dir}/bin/codex-isolated" "${launcher_target}"
+install -D -m 0755 "${project_dir}/scripts/codex-wezterm-notify" "${notification_relay_target}"
+"${notification_relay_target}" '{"type":"smoke-test"}'
 docker volume create codex-isolated-uv-cache >/dev/null
 docker volume create codex-isolated-uv-data >/dev/null
 
 echo "Installed launcher: ${launcher_target}"
+echo "Installed notification relay: ${notification_relay_target}"
 echo "Installed Docker image: codex-isolated"
 echo "Codex version: ${host_codex_version} (matches host)"
