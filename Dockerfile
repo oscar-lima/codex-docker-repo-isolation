@@ -24,14 +24,23 @@ RUN addgroup -g "${GROUP_ID}" codex \
        py3-setuptools \
        py3-wheel \
        py3-yaml \
+       poppler-utils \
        python3 \
        ripgrep \
        ruby \
+       shellcheck \
        sqlite \
        unzip \
        uv \
+       yq \
+       zip \
     && test -n "${CODEX_VERSION}" \
     && npm install --global "@openai/codex@${CODEX_VERSION}" \
+    && install -d /usr/lib/chatgpt/resources/cua_node/bin \
+       /usr/lib/chatgpt/resources/cua_node/lib/node_modules \
+    && ln -s /usr/local/bin/node /usr/lib/chatgpt/resources/cua_node/bin/node \
+    && touch /usr/lib/chatgpt/resources/codex \
+       /usr/lib/chatgpt/resources/cua_node/bin/node_repl \
     && install -d -o "${USER_ID}" -g "${GROUP_ID}" \
        /home/codex/.codex /home/codex/.cache \
        "/run/user/${USER_ID}" \

@@ -31,9 +31,16 @@ docker build \
     --tag codex-isolated \
     "${project_dir}"
 
-docker run --rm --entrypoint /bin/sh codex-isolated -c '
+docker run --rm \
+    --mount "type=bind,source=/usr/lib/chatgpt/resources/codex,target=/usr/lib/chatgpt/resources/codex,readonly" \
+    --mount "type=bind,source=/usr/lib/chatgpt/resources/cua_node/bin/node_repl,target=/usr/lib/chatgpt/resources/cua_node/bin/node_repl,readonly" \
+    --mount "type=bind,source=/usr/lib/chatgpt/resources/cua_node/lib/node_modules,target=/usr/lib/chatgpt/resources/cua_node/lib/node_modules,readonly" \
+    --entrypoint /bin/sh \
+    codex-isolated -c '
     set -eu
     ! command -v docker >/dev/null
+    /usr/lib/chatgpt/resources/cua_node/bin/node --version
+    /usr/lib/chatgpt/resources/cua_node/bin/node_repl --help
     bash --version | head -n 1
     curl --version | head -n 1
     find --version | head -n 1
@@ -56,9 +63,13 @@ docker run --rm --entrypoint /bin/sh codex-isolated -c '
     rg --version | head -n 1
     ruby --version
     ruby -e "require \"yaml\""
+    shellcheck --version | head -n 2
     sqlite3 --version
+    pdftotext -v
     unzip -v | head -n 1
     uv --version
+    yq --version
+    zip -v | head -n 1
     command -v code-review-graph
     wezterm-agent-state running
     codex --version

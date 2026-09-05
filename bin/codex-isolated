@@ -78,7 +78,9 @@ exec docker run --rm -it \
     --mount "type=bind,source=/home/oscar/.cache/codex-runtimes,target=/home/oscar/.cache/codex-runtimes" \
     --mount "type=volume,source=codex-isolated-uv-cache,target=/home/oscar/.cache/uv" \
     --mount "type=volume,source=codex-isolated-uv-data,target=/home/oscar/.local/share/uv" \
-    --mount "type=bind,source=/usr/lib/chatgpt/resources,target=/usr/lib/chatgpt/resources,readonly" \
+    --mount "type=bind,source=/usr/lib/chatgpt/resources/codex,target=/usr/lib/chatgpt/resources/codex,readonly" \
+    --mount "type=bind,source=/usr/lib/chatgpt/resources/cua_node/bin/node_repl,target=/usr/lib/chatgpt/resources/cua_node/bin/node_repl,readonly" \
+    --mount "type=bind,source=/usr/lib/chatgpt/resources/cua_node/lib/node_modules,target=/usr/lib/chatgpt/resources/cua_node/lib/node_modules,readonly" \
     "${read_only_mount_args[@]}" \
     "${desktop_notification_args[@]}" \
     --env HOME=/home/oscar \

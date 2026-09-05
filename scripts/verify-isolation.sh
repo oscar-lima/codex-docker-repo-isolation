@@ -18,11 +18,16 @@ docker run --rm \
     --cap-drop ALL \
     --security-opt no-new-privileges \
     --tmpfs "/tmp:rw,nosuid,nodev,uid=${verification_uid},gid=${verification_gid}" \
+    --mount "type=bind,source=/usr/lib/chatgpt/resources/codex,target=/usr/lib/chatgpt/resources/codex,readonly" \
+    --mount "type=bind,source=/usr/lib/chatgpt/resources/cua_node/bin/node_repl,target=/usr/lib/chatgpt/resources/cua_node/bin/node_repl,readonly" \
+    --mount "type=bind,source=/usr/lib/chatgpt/resources/cua_node/lib/node_modules,target=/usr/lib/chatgpt/resources/cua_node/lib/node_modules,readonly" \
     --entrypoint /bin/sh \
     codex-isolated -c '
     set -eu
     ! command -v docker >/dev/null
     test ! -S /var/run/docker.sock
+    /usr/lib/chatgpt/resources/cua_node/bin/node --version >/dev/null
+    /usr/lib/chatgpt/resources/cua_node/bin/node_repl --help >/dev/null
     command -v bash >/dev/null
     curl --version >/dev/null
     find --version >/dev/null
@@ -42,9 +47,13 @@ docker run --rm \
         python3 -c "from PyQt5.QtWidgets import QApplication, QWidget; app = QApplication([]); widget = QWidget(); widget.show(); app.processEvents()"
     command -v rg >/dev/null
     ruby -e "require \"yaml\"" >/dev/null
+    shellcheck --version >/dev/null
     sqlite3 --version >/dev/null
+    pdftotext -v >/dev/null 2>&1
     command -v unzip >/dev/null
     command -v uv >/dev/null
+    yq --version >/dev/null
+    zip -v >/dev/null
     command -v code-review-graph >/dev/null
     command -v wezterm-agent-state >/dev/null
 '
@@ -79,6 +88,10 @@ docker run --rm \
 rg -F -- '--env TERM_PROGRAM' "$launcher" >/dev/null
 rg -F -- 'DBUS_SESSION_BUS_ADDRESS=unix:path=' "$launcher" >/dev/null
 rg -F -- 'source=/etc/machine-id,target=/etc/machine-id,readonly' "$launcher" >/dev/null
+rg -F -- 'source=/usr/lib/chatgpt/resources/codex,target=/usr/lib/chatgpt/resources/codex,readonly' "$launcher" >/dev/null
+rg -F -- 'source=/usr/lib/chatgpt/resources/cua_node/bin/node_repl,target=/usr/lib/chatgpt/resources/cua_node/bin/node_repl,readonly' "$launcher" >/dev/null
+rg -F -- 'source=/usr/lib/chatgpt/resources/cua_node/lib/node_modules,target=/usr/lib/chatgpt/resources/cua_node/lib/node_modules,readonly' "$launcher" >/dev/null
+! rg -F -- 'source=/usr/lib/chatgpt/resources,target=/usr/lib/chatgpt/resources,readonly' "$launcher" >/dev/null
 rg -F -- '--security-opt apparmor=unconfined' "$launcher" >/dev/null
 rg -F -- 'tui.notifications=true' "$launcher" >/dev/null
 rg -F -- 'tui.notification_method="osc9"' "$launcher" >/dev/null

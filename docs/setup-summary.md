@@ -47,9 +47,9 @@ container described below supplies the enforceable host-filesystem boundary.
 - Dockerfile source: `Dockerfile` in this repository
 - Base image: Alpine Linux with Node.js 22
 - Added runtime packages: Bash, Bubblewrap, GNU coreutils and findutils, `curl`,
-  Git, ImageMagick, `jq`, `notify-send`, Python 3, NumPy, PyYAML, pip,
-  setuptools, build, wheel, pytest, PyQt 5, ripgrep, Ruby, SQLite, `unzip`, and
-  `uv`/`uvx`
+  Git, ImageMagick, `jq`, `notify-send`, Poppler PDF utilities, Python 3, NumPy,
+  PyYAML, pip, setuptools, build, wheel, pytest, PyQt 5, ripgrep, Ruby,
+  ShellCheck, SQLite, `unzip`, `uv`/`uvx`, `yq`, and ZIP
 - Included helper: `wezterm-agent-state`, for the shared Codex status hooks
 - Included wrapper: `code-review-graph`, dispatched through `uvx`
 
@@ -119,12 +119,21 @@ specific host paths:
 - `~/.config/agent-skill-manager` read/write: target of the global
   `~/.codex/AGENTS.md` symlink.
 - `~/.cache/codex-runtimes` read/write: installed Codex runtime/plugin cache.
-- `/usr/lib/chatgpt/resources` read-only: configured ChatGPT/Codex runtime
-  executables such as the Node REPL.
+- `/usr/lib/chatgpt/resources/codex` read-only: resource lookup for configured
+  integrations.
+- `/usr/lib/chatgpt/resources/cua_node/bin/node_repl` read-only: the configured
+  Node REPL MCP executable.
+- `/usr/lib/chatgpt/resources/cua_node/lib/node_modules` read-only: packaged
+  modules used by the Node REPL.
 - Any existing absolute paths named in `CODEX_READ_ONLY_PATHS`, mounted
   read-only at the same locations inside the container.
 - `/run/user/<uid>/bus` and `/etc/machine-id` read-only when a desktop session
   bus is present: native Linux desktop notification access for `notify-send`.
+
+The image provides its Alpine-native Node executable at the resource path used
+by MCP configuration. This keeps `cua_repl` from trying to launch the
+incompatible glibc Node executable shipped for the Ubuntu host, while the
+compatible Node REPL binary and modules remain narrowly mounted read-only.
 
 `HOME` and `CODEX_HOME` inside the container point to `/home/oscar` and
 `/home/oscar/.codex`, matching the host configuration and its absolute paths.

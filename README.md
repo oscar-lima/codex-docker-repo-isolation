@@ -40,9 +40,13 @@ that exact version, installs the launcher under `~/.local/bin`, and creates the
 persistent `uv` volumes. Running `./install.sh` again after updating Codex on
 the host therefore rebuilds isolated Codex at the same version. The installation
 verifies that the host and isolated versions match and that the baseline shell
-utilities, `curl`, Git, ImageMagick, Python test and package-build tooling, PyQt 5
-(using Qt's offscreen platform), Ruby, SQLite, `unzip`, `uv`, and both configured
-hook commands are available in the new image before installing the launcher.
+utilities, `curl`, Git, ImageMagick, PDF utilities, Python test and package-build
+tooling, PyQt 5 (using Qt's offscreen platform), Ruby, ShellCheck, SQLite, `yq`,
+ZIP utilities, `uv`, and both configured hook commands are available in the new
+image before installing the launcher. It also executes the image-native Node at
+the path used by ChatGPT's MCP configuration and verifies that the mounted Node
+REPL is executable, catching compatibility failures that would prevent MCP
+servers such as `cua_repl` from starting.
 
 ## Use
 
@@ -112,7 +116,12 @@ cannot build, replace, or start containers on its host.
 - `~/.config/agent-skill-manager`: read/write so the global `AGENTS.md` symlink
   resolves.
 - `~/.cache/codex-runtimes`: read/write for Codex runtime/plugin artifacts.
-- `/usr/lib/chatgpt/resources`: read-only for configured runtime executables.
+- `/usr/lib/chatgpt/resources/codex`: read-only for integrations that locate
+  Codex-relative resources.
+- `/usr/lib/chatgpt/resources/cua_node/bin/node_repl`: read-only for the
+  configured Node REPL MCP servers.
+- `/usr/lib/chatgpt/resources/cua_node/lib/node_modules`: read-only for the Node
+  REPL's packaged modules.
 - Paths listed in `CODEX_READ_ONLY_PATHS`: read-only, at their original absolute
   locations.
 - `/run/user/<uid>/bus`: the current user's D-Bus session socket, when present,
@@ -131,14 +140,23 @@ artifacts.
 
 The image includes Bash, GNU coreutils and findutils, `curl`, Git, ImageMagick,
 `jq`, `notify-send`, Python 3, NumPy, PyYAML, pip, setuptools, build, wheel,
-pytest, PyQt 5, ripgrep, Ruby with YAML support, SQLite, `unzip`, and a
-container-local copy of the `wezterm-agent-state` helper. PyQt 5 makes headless
-GUI checks possible with `QT_QPA_PLATFORM=offscreen`. The SQLite CLI supports
-direct, read-only inspection of repository and Codex state databases. The
-Python packaging tools support inspecting and building project wheels without
-modifying the read-only image. Git is required by repository-aware hooks, while
-the helper lets the shared hook configuration update WezTerm status without
-mounting the host's full WezTerm configuration directory.
+pytest, PyQt 5, ripgrep, Ruby with YAML support, ShellCheck, SQLite, `unzip`,
+`uv`, `yq`, ZIP, and Poppler PDF utilities, plus a container-local copy of the
+`wezterm-agent-state` helper. PyQt 5 makes headless GUI checks possible with
+`QT_QPA_PLATFORM=offscreen`. ShellCheck provides static analysis for shell
+scripts, `yq` provides structured YAML queries and edits, and Poppler supports
+PDF text and metadata inspection. The SQLite CLI supports direct, read-only
+inspection of repository and Codex state databases. The Python packaging tools
+support inspecting and building project wheels without modifying the read-only
+image. Git is required by repository-aware hooks, while the helper lets the
+shared hook configuration update WezTerm status without mounting the host's
+full WezTerm configuration directory.
+
+The image supplies Alpine's native Node executable at the path used by the
+ChatGPT-provided MCP configuration. Only the compatible Node REPL executable,
+its packaged modules, and the Codex resource executable are mounted from the
+host. This fixes `cua_repl` startup after Codex upgrades while narrowing the
+previous whole-resources mount and preserving the container's security options.
 
 A container-local `code-review-graph` wrapper dispatches that hook command via
 `uvx`, using the persistent container-compatible `uv` volumes.
