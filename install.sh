@@ -56,6 +56,7 @@ docker run --rm --entrypoint /bin/sh codex-isolated -c '
     rg --version | head -n 1
     ruby --version
     ruby -e "require \"yaml\""
+    sqlite3 --version
     unzip -v | head -n 1
     uv --version
     command -v code-review-graph

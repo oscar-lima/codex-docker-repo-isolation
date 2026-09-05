@@ -41,8 +41,8 @@ persistent `uv` volumes. Running `./install.sh` again after updating Codex on
 the host therefore rebuilds isolated Codex at the same version. The installation
 verifies that the host and isolated versions match and that the baseline shell
 utilities, `curl`, Git, ImageMagick, Python test and package-build tooling, PyQt 5
-(using Qt's offscreen platform), Ruby, `unzip`, `uv`, and both configured hook
-commands are available in the new image before installing the launcher.
+(using Qt's offscreen platform), Ruby, SQLite, `unzip`, `uv`, and both configured
+hook commands are available in the new image before installing the launcher.
 
 ## Use
 
@@ -131,13 +131,14 @@ artifacts.
 
 The image includes Bash, GNU coreutils and findutils, `curl`, Git, ImageMagick,
 `jq`, `notify-send`, Python 3, NumPy, PyYAML, pip, setuptools, build, wheel,
-pytest, PyQt 5, ripgrep, Ruby with YAML support, `unzip`, and a container-local
-copy of the `wezterm-agent-state` helper. PyQt 5 makes headless GUI checks possible with
-`QT_QPA_PLATFORM=offscreen`. The Python packaging tools support inspecting and
-building project wheels without modifying the read-only image. Git is required
-by repository-aware hooks, while the helper lets the shared hook configuration
-update WezTerm status without mounting the host's full WezTerm configuration
-directory.
+pytest, PyQt 5, ripgrep, Ruby with YAML support, SQLite, `unzip`, and a
+container-local copy of the `wezterm-agent-state` helper. PyQt 5 makes headless
+GUI checks possible with `QT_QPA_PLATFORM=offscreen`. The SQLite CLI supports
+direct, read-only inspection of repository and Codex state databases. The
+Python packaging tools support inspecting and building project wheels without
+modifying the read-only image. Git is required by repository-aware hooks, while
+the helper lets the shared hook configuration update WezTerm status without
+mounting the host's full WezTerm configuration directory.
 
 A container-local `code-review-graph` wrapper dispatches that hook command via
 `uvx`, using the persistent container-compatible `uv` volumes.

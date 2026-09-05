@@ -27,6 +27,7 @@ RUN addgroup -g "${GROUP_ID}" codex \
        python3 \
        ripgrep \
        ruby \
+       sqlite \
        unzip \
        uv \
     && test -n "${CODEX_VERSION}" \

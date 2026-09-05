@@ -42,6 +42,7 @@ docker run --rm \
         python3 -c "from PyQt5.QtWidgets import QApplication, QWidget; app = QApplication([]); widget = QWidget(); widget.show(); app.processEvents()"
     command -v rg >/dev/null
     ruby -e "require \"yaml\"" >/dev/null
+    sqlite3 --version >/dev/null
     command -v unzip >/dev/null
     command -v uv >/dev/null
     command -v code-review-graph >/dev/null

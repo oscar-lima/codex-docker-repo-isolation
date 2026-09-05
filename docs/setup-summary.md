@@ -48,7 +48,8 @@ container described below supplies the enforceable host-filesystem boundary.
 - Base image: Alpine Linux with Node.js 22
 - Added runtime packages: Bash, Bubblewrap, GNU coreutils and findutils, `curl`,
   Git, ImageMagick, `jq`, `notify-send`, Python 3, NumPy, PyYAML, pip,
-  setuptools, build, wheel, pytest, PyQt 5, ripgrep, Ruby, `unzip`, and `uv`/`uvx`
+  setuptools, build, wheel, pytest, PyQt 5, ripgrep, Ruby, SQLite, `unzip`, and
+  `uv`/`uvx`
 - Included helper: `wezterm-agent-state`, for the shared Codex status hooks
 - Included wrapper: `code-review-graph`, dispatched through `uvx`
 
