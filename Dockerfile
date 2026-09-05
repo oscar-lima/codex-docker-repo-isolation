@@ -17,6 +17,7 @@ RUN addgroup -g "${GROUP_ID}" codex \
        jq \
        libnotify \
        py3-build \
+       py3-numpy \
        py3-pip \
        py3-pytest \
        py3-qt5 \

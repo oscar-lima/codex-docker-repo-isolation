@@ -130,9 +130,9 @@ container-compatible Python MCP runtime data without sharing incompatible host
 artifacts.
 
 The image includes Bash, GNU coreutils and findutils, `curl`, Git, ImageMagick,
-`jq`, `notify-send`, Python 3, PyYAML, pip, setuptools, build, wheel, pytest, PyQt 5,
-ripgrep, Ruby with YAML support, `unzip`, and a container-local copy of the
-`wezterm-agent-state` helper. PyQt 5 makes headless GUI checks possible with
+`jq`, `notify-send`, Python 3, NumPy, PyYAML, pip, setuptools, build, wheel,
+pytest, PyQt 5, ripgrep, Ruby with YAML support, `unzip`, and a container-local
+copy of the `wezterm-agent-state` helper. PyQt 5 makes headless GUI checks possible with
 `QT_QPA_PLATFORM=offscreen`. The Python packaging tools support inspecting and
 building project wheels without modifying the read-only image. Git is required
 by repository-aware hooks, while the helper lets the shared hook configuration

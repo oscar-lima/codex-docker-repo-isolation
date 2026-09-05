@@ -33,6 +33,7 @@ docker run --rm \
     command -v python3 >/dev/null
     python3 -m pip --version >/dev/null
     python3 -c "import build, setuptools, wheel" >/dev/null
+    python3 -c "import numpy" >/dev/null
     python3 -c "import yaml" >/dev/null
     python3 -m pytest --version >/dev/null
     qt_runtime_dir="$(mktemp -d)"

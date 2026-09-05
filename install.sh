@@ -46,6 +46,7 @@ docker run --rm --entrypoint /bin/sh codex-isolated -c '
     python3 -c "import build; print(\"build \" + build.__version__)"
     python3 -c "import setuptools; print(\"setuptools \" + setuptools.__version__)"
     python3 -c "import wheel; print(\"wheel \" + wheel.__version__)"
+    python3 -c "import numpy; print(\"NumPy \" + numpy.__version__)"
     python3 -c "import yaml; print(\"PyYAML \" + yaml.__version__)"
     python3 -m pytest --version
     qt_runtime_dir="$(mktemp -d)"
