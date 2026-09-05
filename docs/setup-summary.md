@@ -47,7 +47,8 @@ container described below supplies the enforceable host-filesystem boundary.
 - Dockerfile source: `Dockerfile` in this repository
 - Base image: Alpine Linux with Node.js 22
 - Added runtime packages: Bash, Bubblewrap, GNU coreutils and findutils, `curl`,
-  Git, ImageMagick, `jq`, `notify-send`, Poppler PDF utilities, Python 3, NumPy,
+  Git, ImageMagick, `jq`, `notify-send`, `xmllint`, Poppler PDF utilities,
+  Python 3, NumPy,
   PyYAML, pip, setuptools, build, wheel, pytest, PyQt 5, ripgrep, Ruby,
   ShellCheck, SQLite, `unzip`, `uv`/`uvx`, `yq`, and ZIP
 - Included helper: `wezterm-agent-state`, for the shared Codex status hooks

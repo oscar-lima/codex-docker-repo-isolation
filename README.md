@@ -41,8 +41,8 @@ that exact version, installs the launcher under `~/.local/bin`, and creates the
 persistent `uv` volumes. Running `./install.sh` again after updating Codex on
 the host therefore rebuilds isolated Codex at the same version. The installation
 verifies that the host and isolated versions match and that the baseline shell
-utilities, `curl`, Git, ImageMagick, PDF utilities, Python test and package-build
-tooling, PyQt 5 (using Qt's offscreen platform), Ruby, ShellCheck, SQLite, `yq`,
+utilities, `curl`, Git, ImageMagick, XML and PDF utilities, Python test and
+package-build tooling, PyQt 5 (using Qt's offscreen platform), Ruby, ShellCheck, SQLite, `yq`,
 ZIP utilities, `uv`, and both configured hook commands are available in the new
 image before installing the launcher. It also executes the image-native Node at
 the path used by ChatGPT's MCP configuration and verifies that the mounted Node
@@ -132,13 +132,14 @@ container-compatible Python MCP runtime data without sharing incompatible host
 artifacts.
 
 The image includes Bash, GNU coreutils and findutils, `curl`, Git, ImageMagick,
-`jq`, `notify-send`, Python 3, NumPy, PyYAML, pip, setuptools, build, wheel,
-pytest, PyQt 5, ripgrep, Ruby with YAML support, ShellCheck, SQLite, `unzip`,
+`jq`, `notify-send`, `xmllint`, Python 3, NumPy, PyYAML, pip, setuptools, build,
+wheel, pytest, PyQt 5, ripgrep, Ruby with YAML support, ShellCheck, SQLite, `unzip`,
 `uv`, `yq`, ZIP, and Poppler PDF utilities, plus a container-local copy of the
 `wezterm-agent-state` helper. PyQt 5 makes headless GUI checks possible with
 `QT_QPA_PLATFORM=offscreen`. ShellCheck provides static analysis for shell
-scripts, `yq` provides structured YAML queries and edits, and Poppler supports
-PDF text and metadata inspection. The SQLite CLI supports direct, read-only
+scripts, `yq` provides structured YAML queries and edits, `xmllint` supports
+XML validation and queries, and Poppler supports PDF text and metadata inspection.
+The SQLite CLI supports direct, read-only
 inspection of repository and Codex state databases. The Python packaging tools
 support inspecting and building project wheels without modifying the read-only
 image. Git is required by repository-aware hooks, while the helper lets the

@@ -41,6 +41,7 @@ docker run --rm \
     command -v git >/dev/null
     command -v identify >/dev/null
     command -v jq >/dev/null
+    xmllint --version >/dev/null 2>&1
     grep -Eq "^[0-9a-f]{32}$" /etc/machine-id
     command -v notify-send >/dev/null
     command -v python3 >/dev/null

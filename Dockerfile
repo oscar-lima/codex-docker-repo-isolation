@@ -16,6 +16,7 @@ RUN addgroup -g "${GROUP_ID}" codex \
        imagemagick \
        jq \
        libnotify \
+       libxml2-utils \
        py3-build \
        py3-numpy \
        py3-pip \

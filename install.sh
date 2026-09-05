@@ -55,6 +55,7 @@ docker run --rm \
     git --version
     identify -version | head -n 1
     jq --version
+    xmllint --version
     grep -Eq "^[0-9a-f]{32}$" /etc/machine-id
     notify-send --version
     python3 --version
