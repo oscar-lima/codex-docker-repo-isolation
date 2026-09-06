@@ -111,6 +111,11 @@ The launcher starts Docker with:
   through an OSC 1337 user variable on the existing terminal connection.
 - `tui.notifications = []` disables earlier built-in alerts, so desktop
   notifications are emitted only by the completion relay.
+- The relay filters Codex's hidden title-generation/rename prompt envelopes.
+  Those internal turns invoke legacy `notify` near task startup with distinct
+  IDs, so duplicate filtering alone cannot suppress the premature "finished"
+  alert. Regression tests run with `python3 -B -m unittest discover -s tests -v`.
+  Rebuild the image and start a new isolated session to update its relay.
 - No WezTerm control socket or configuration path is mounted. The host WezTerm
   process receives the OSC request and owns desktop notification and pane-focus
   operations.

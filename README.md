@@ -104,12 +104,22 @@ On turn completion, the relay writes an OSC 1337 user-variable request to the
 originating terminal. The host WezTerm configuration converts that request into
 a timed, clickable desktop notification named from the submitted task rather
 than the checkout directory. The stable Codex turn identity lets WezTerm ignore
-a replayed completion event, and the relay clears the request from the pane so
-the next task's state update cannot replay it. Built-in TUI alerts are
+a replayed completion event, and the relay clears the request from the pane
+after delivery. Codex's hidden title-generation/rename turns also invoke the
+legacy notifier, with different thread/turn IDs. The relay suppresses their
+internal prompt envelopes before either delivery route, preventing a misleading
+"finished" alert near task startup. Ordinary title requests and JSON results
+still notify. The legacy payload lacks an internal/ephemeral thread flag, so
+this filter follows the title prompt format used by Codex 0.153.4. Built-in TUI alerts are
 disabled so approval or other lifecycle events do not produce an earlier
 desktop notification. `WEZTERM_PANE` and `TMUX` are forwarded as terminal
 identity markers; neither the WezTerm control socket nor a WezTerm host path is
 mounted.
+
+Run `python3 -B -m unittest discover -s tests -v` to check the notification
+lifecycle without sending desktop alerts. After changing the relay, run
+`./install.sh` and `./scripts/verify-isolation.sh` on the host, then start a new
+isolated session. Existing containers keep their original image-installed copy.
 
 For explicit notification commands, the image also includes the real
 `notify-send` client. When the standard per-user D-Bus socket is available, the

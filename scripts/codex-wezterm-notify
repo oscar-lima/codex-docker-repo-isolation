@@ -43,6 +43,38 @@ def task_name(payload: dict[str, object]) -> str:
     return tab_name_from_cwd(str(payload.get("cwd", "")))
 
 
+def is_internal_title_request(payload: dict[str, object]) -> bool:
+    """Recognize Codex's hidden title turns, which also invoke legacy notify.
+
+    The legacy payload has no ephemeral/thread-source field. Match the internal
+    prompt envelope, not the response (a real task can legitimately return JSON
+    with a title), and do not confuse quoted instructions with that envelope.
+    """
+    messages = payload.get("input-messages")
+    if not isinstance(messages, list):
+        return False
+    for message in messages:
+        if not isinstance(message, str):
+            continue
+        if not message.startswith(
+            "Generate a concise, single-line task title of at most "
+        ):
+            continue
+        instructions, separator, context = message.partition("\n\n")
+        if not separator:
+            continue
+        if instructions.endswith("Do not answer the request."):
+            if context.startswith("User prompt:\n"):
+                return True
+        if instructions.endswith(
+            "Do not answer the request.\n"
+            "Prioritize the current task and latest substantive user request."
+        ):
+            if context.startswith("Recent conversation messages:\n"):
+                return True
+    return False
+
+
 def event_id(payload: dict[str, object]) -> str:
     """Return a stable identity so WezTerm can ignore replayed turn events."""
     thread_id = payload.get("thread-id")
@@ -227,7 +259,9 @@ def main() -> int:
         payload = json.loads(sys.argv[1])
     except json.JSONDecodeError:
         return 0
-    if payload.get("type") != "agent-turn-complete":
+    if not isinstance(payload, dict) or payload.get("type") != "agent-turn-complete":
+        return 0
+    if is_internal_title_request(payload):
         return 0
 
     if send_notification_request(payload):
