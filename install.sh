@@ -66,6 +66,7 @@ docker run --rm \
     grep -Eq "^[0-9a-f]{32}$" /etc/machine-id
     notify-send --version
     python3 --version
+    black --version
     python3 -m pip --version
     python3 -c "import build; print(\"build \" + build.__version__)"
     python3 -c "import setuptools; print(\"setuptools \" + setuptools.__version__)"

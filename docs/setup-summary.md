@@ -53,6 +53,7 @@ container described below supplies the enforceable host-filesystem boundary.
   Python 3, NumPy,
   PyYAML, pip, setuptools, build, wheel, pytest, PyQt 5, ripgrep, Ruby,
   ShellCheck, SQLite, `unzip`, `uv`/`uvx`, `yq`, and ZIP
+- Installed Python tool: Black 26.5.1, in an isolated `uv` tool environment
 - Included helper: `wezterm-agent-state`, for the shared Codex status hooks
 - Included notification relay: `codex-wezterm-notify`, for the shared Codex
   external notification command

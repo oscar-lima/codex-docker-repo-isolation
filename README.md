@@ -104,7 +104,8 @@ On turn completion, the relay writes an OSC 1337 user-variable request to the
 originating terminal. The host WezTerm configuration converts that request into
 a timed, clickable desktop notification named from the submitted task rather
 than the checkout directory. The stable Codex turn identity lets WezTerm ignore
-a replayed completion event when the next task starts. Built-in TUI alerts are
+a replayed completion event, and the relay clears the request from the pane so
+the next task's state update cannot replay it. Built-in TUI alerts are
 disabled so approval or other lifecycle events do not produce an earlier
 desktop notification. `WEZTERM_PANE` and `TMUX` are forwarded as terminal
 identity markers; neither the WezTerm control socket nor a WezTerm host path is
@@ -165,7 +166,7 @@ container-compatible Python MCP runtime data without sharing incompatible host
 artifacts.
 
 The image includes Bash, GNU coreutils and findutils, `curl`, Git, ImageMagick,
-`jq`, `notify-send`, `xmllint`, Python 3, NumPy, PyYAML, pip, setuptools, build,
+`jq`, `notify-send`, `xmllint`, Python 3, Black, NumPy, PyYAML, pip, setuptools, build,
 wheel, pytest, PyQt 5, ripgrep, Ruby with YAML support, ShellCheck, SQLite, `unzip`,
 `uv`, `yq`, ZIP, and Poppler PDF utilities, plus container-local copies of the
 `wezterm-agent-state` and `codex-wezterm-notify` helpers. The notification relay
@@ -174,6 +175,8 @@ additional filesystem mount. PyQt 5 makes headless GUI checks possible with
 `QT_QPA_PLATFORM=offscreen`. ShellCheck provides static analysis for shell
 scripts, `yq` provides structured YAML queries and edits, `xmllint` supports
 XML validation and queries, and Poppler supports PDF text and metadata inspection.
+Black is installed as a pinned, isolated `uv` tool because it is not available
+as an Alpine package in the base image's repositories.
 The SQLite CLI supports direct, read-only
 inspection of repository and Codex state databases. The Python packaging tools
 support inspecting and building project wheels without modifying the read-only

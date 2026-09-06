@@ -63,6 +63,7 @@ docker run --rm \
     grep -Eq "^[0-9a-f]{32}$" /etc/machine-id
     command -v notify-send >/dev/null
     command -v python3 >/dev/null
+    black --version >/dev/null
     python3 -m pip --version >/dev/null
     python3 -c "import build, setuptools, wheel" >/dev/null
     python3 -c "import numpy" >/dev/null
@@ -84,6 +85,7 @@ docker run --rm \
     command -v code-review-graph >/dev/null
     command -v codex-wezterm-notify >/dev/null
     grep -F "SetUserVar=" "$(command -v codex-wezterm-notify)" >/dev/null
+    grep -F "user_var_sequence(\"\")" "$(command -v codex-wezterm-notify)" >/dev/null
     codex-wezterm-notify "{\"type\":\"smoke-test\"}"
     command -v wezterm-agent-state >/dev/null
 '
@@ -164,6 +166,7 @@ fi
 rg -F -- 'codex-wezterm-notify relay' "$launcher" >/dev/null
 rg -F -- 'NOTIFICATION_VARIABLE = "codex_notification_request"' "$notification_relay" >/dev/null
 rg -F -- 'SetUserVar=' "$notification_relay" >/dev/null
+rg -F -- 'user_var_sequence("")' "$notification_relay" >/dev/null
 if rg -F -- 'tui.notification_method="osc9"' "$launcher" >/dev/null; then
     echo "Launcher still overrides the external completion notification relay." >&2
     exit 1

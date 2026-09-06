@@ -3,6 +3,7 @@ FROM node:22-alpine
 ARG USER_ID=1001
 ARG GROUP_ID=1001
 ARG CODEX_VERSION
+ARG BLACK_VERSION=26.5.1
 
 RUN addgroup -g "${GROUP_ID}" codex \
     && adduser -D -u "${USER_ID}" -G codex codex \
@@ -35,6 +36,9 @@ RUN addgroup -g "${GROUP_ID}" codex \
        uv \
        yq \
        zip \
+    && UV_TOOL_DIR=/opt/uv-tools UV_TOOL_BIN_DIR=/usr/local/bin \
+       uv tool install "black==${BLACK_VERSION}" \
+    && black --version \
     && test -n "${CODEX_VERSION}" \
     && npm install --global "@openai/codex@${CODEX_VERSION}" \
     && install -d /usr/lib/chatgpt/resources/cua_node/bin \

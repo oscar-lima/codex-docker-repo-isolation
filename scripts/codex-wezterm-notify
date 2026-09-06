@@ -53,6 +53,15 @@ def event_id(payload: dict[str, object]) -> str:
     return str(time.time_ns())
 
 
+def user_var_sequence(value: str) -> str:
+    """Encode a WezTerm user variable update for the current terminal."""
+    encoded = base64.b64encode(value.encode()).decode()
+    sequence = f"\033]1337;SetUserVar={NOTIFICATION_VARIABLE}={encoded}\007"
+    if os.environ.get("TMUX"):
+        return f"\033Ptmux;\033{sequence}\033\\"
+    return sequence
+
+
 def terminal_path() -> str:
     """Find the terminal even when the hook itself has captured stdio."""
     pid = os.getpid()
@@ -89,10 +98,10 @@ def send_notification_request(payload: dict[str, object]) -> bool:
             str(payload.get("last-assistant-message", "Turn complete"))
         ),
     }
-    encoded = base64.b64encode(json.dumps(request).encode()).decode()
-    sequence = f"\033]1337;SetUserVar={NOTIFICATION_VARIABLE}={encoded}\007"
-    if os.environ.get("TMUX"):
-        sequence = f"\033Ptmux;\033{sequence}\033\\"
+    # Clear the pane variable immediately after publishing the request. WezTerm
+    # still delivers both ordered changes, while future pane-state updates can
+    # no longer replay the previous turn's completion request.
+    sequence = user_var_sequence(json.dumps(request)) + user_var_sequence("")
 
     try:
         with open(tty_path, "wb", buffering=0) as terminal:
