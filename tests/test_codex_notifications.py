@@ -7,6 +7,7 @@ from pathlib import Path
 import runpy
 import subprocess
 import tempfile
+import time
 import unittest
 from unittest.mock import Mock, mock_open, patch
 
@@ -165,7 +166,7 @@ class NotificationTests(unittest.TestCase):
                 self.assertEqual(request["body"], "Fixed and verified.")
                 self.assertEqual(values[1], b"")
 
-    def test_replayed_completion_is_claimed_only_once(self):
+    def test_replayed_and_reidentified_completions_are_claimed_only_once(self):
         claim_notification = runpy.run_path(str(RELAY))["claim_notification"]
         namespace = claim_notification.__globals__
         with tempfile.TemporaryDirectory() as directory:
@@ -173,7 +174,27 @@ class NotificationTests(unittest.TestCase):
             payload = completion()
             self.assertTrue(claim_notification(payload))
             self.assertFalse(claim_notification(payload))
-            self.assertTrue(claim_notification(completion(**{"turn-id": "next-turn"})))
+            self.assertFalse(
+                claim_notification(
+                    completion(**{"thread-id": "replayed", "turn-id": "new-id"})
+                )
+            )
+            self.assertTrue(
+                claim_notification(
+                    completion(
+                        "A genuinely new task", **{"turn-id": "next-turn"}
+                    )
+                )
+            )
+            later = time.time() + namespace["DEDUPE_WINDOW_SECONDS"]
+            with patch("time.time", return_value=later):
+                self.assertTrue(
+                    claim_notification(
+                        completion(
+                            **{"thread-id": "later", "turn-id": "later-turn"}
+                        )
+                    )
+                )
 
     def test_completion_replay_stops_before_both_delivery_routes(self):
         with patch.dict(self.namespace), patch("subprocess.Popen") as worker:

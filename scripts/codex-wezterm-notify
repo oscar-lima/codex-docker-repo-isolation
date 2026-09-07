@@ -2,6 +2,7 @@
 """Relay Codex completion notifications through the originating WezTerm pane."""
 
 import base64
+import fcntl
 import hashlib
 import json
 import os
@@ -15,6 +16,7 @@ from urllib.parse import unquote, urlparse
 
 NOTIFICATION_VARIABLE = "codex_notification_request"
 BACKGROUND_TIMEOUT_MS = 3000
+DEDUPE_WINDOW_SECONDS = 300
 DEDUPE_DIR = Path(tempfile.gettempdir()) / f"codex-wezterm-notify-{os.getuid()}"
 
 
@@ -87,24 +89,58 @@ def event_id(payload: dict[str, object]) -> str:
     return str(time.time_ns())
 
 
-def claim_notification(payload: dict[str, object]) -> bool:
-    """Claim a stable completion event once across relay invocations."""
+def notification_markers(payload: dict[str, object]) -> tuple[str, str]:
+    """Identify both an event replay and the same completion under new IDs."""
+    event = ""
     thread_id = payload.get("thread-id")
     turn_id = payload.get("turn-id")
-    if not isinstance(thread_id, str) or not isinstance(turn_id, str):
-        return True
-    if not thread_id or not turn_id:
-        return True
+    if isinstance(thread_id, str) and isinstance(turn_id, str):
+        if thread_id and turn_id:
+            digest = hashlib.sha256(f"{thread_id}:{turn_id}".encode()).hexdigest()
+            event = f"event-{digest}"
 
-    marker = hashlib.sha256(f"{thread_id}:{turn_id}".encode()).hexdigest()
+    completion = json.dumps(
+        {
+            "cwd": payload.get("cwd"),
+            "input-messages": payload.get("input-messages"),
+            "last-assistant-message": payload.get("last-assistant-message"),
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    fingerprint = hashlib.sha256(completion.encode()).hexdigest()
+    return event, f"completion-{fingerprint}"
+
+
+def claim_notification(payload: dict[str, object]) -> bool:
+    """Atomically claim one logical completion across relay invocations."""
     try:
         DEDUPE_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
-        (DEDUPE_DIR / marker).touch(mode=0o600, exist_ok=False)
+        event_marker, completion_marker = notification_markers(payload)
+        if event_marker:
+            (DEDUPE_DIR / event_marker).touch(mode=0o600, exist_ok=False)
+
+        with (DEDUPE_DIR / completion_marker).open("a+", encoding="utf-8") as marker:
+            fcntl.flock(marker, fcntl.LOCK_EX)
+            marker.seek(0)
+            try:
+                claimed_at = float(marker.read())
+            except ValueError:
+                claimed_at = 0
+            now = time.time()
+            elapsed = now - claimed_at
+            if 0 <= elapsed < DEDUPE_WINDOW_SECONDS:
+                return False
+            marker.seek(0)
+            marker.truncate()
+            marker.write(str(now))
+            marker.flush()
     except FileExistsError:
         return False
-    except OSError:
+    except (OSError, TypeError, ValueError):
         # Notification delivery is more useful than deduplication when the
-        # runtime's temporary directory is unexpectedly unavailable.
+        # payload or runtime's temporary directory is unexpectedly unusable.
         return True
     return True
 

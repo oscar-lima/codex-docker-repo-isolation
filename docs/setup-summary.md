@@ -137,6 +137,8 @@ The launcher starts Docker with:
 - Stable thread/turn IDs are claimed atomically in the relay's temporary
   runtime directory, so a replayed completion cannot reach either its WezTerm
   route or its direct desktop fallback.
+- A five-minute content fingerprint also suppresses a replay that Codex assigns
+  new thread/turn IDs, without silencing a genuinely new task later.
 - No WezTerm control socket or configuration path is mounted. The host WezTerm
   process receives the OSC request and owns desktop notification and pane-focus
   operations.

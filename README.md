@@ -121,9 +121,11 @@ originating terminal. The host WezTerm configuration converts that request into
 a timed, clickable desktop notification named from the submitted task rather
 than the checkout directory. The stable Codex turn identity lets WezTerm ignore
 a replayed completion event. The relay also atomically records stable turn IDs
-in its temporary runtime directory, preventing repeated hook invocations from
-reaching either the terminal or direct desktop fallback, and clears the request
-from the pane after delivery. The notification timeout only closes the existing
+and a five-minute content fingerprint in its temporary runtime directory. This
+prevents repeated hook invocations from reaching either the terminal or direct
+desktop fallback even when Codex assigns the replay new IDs, while allowing a
+genuinely repeated task later. The relay clears the request from the pane after
+delivery. The notification timeout only closes the existing
 desktop notification; it never schedules a reminder or resend. Codex's hidden
 title-generation/rename turns also invoke the legacy notifier, with different
 thread/turn IDs. The relay suppresses their
