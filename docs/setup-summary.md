@@ -134,6 +134,9 @@ The launcher starts Docker with:
   IDs, so duplicate filtering alone cannot suppress the premature "finished"
   alert. Regression tests run with `python3 -B -m unittest discover -s tests -v`.
   Rebuild the image and start a new isolated session to update its relay.
+- Stable thread/turn IDs are claimed atomically in the relay's temporary
+  runtime directory, so a replayed completion cannot reach either its WezTerm
+  route or its direct desktop fallback.
 - No WezTerm control socket or configuration path is mounted. The host WezTerm
   process receives the OSC request and owns desktop notification and pane-focus
   operations.

@@ -5,9 +5,10 @@ import json
 import os
 from pathlib import Path
 import runpy
+import subprocess
+import tempfile
 import unittest
 from unittest.mock import Mock, mock_open, patch
-
 
 ROOT = Path(__file__).resolve().parents[1]
 RELAY = ROOT / "bin/codex-wezterm-notify"
@@ -28,7 +29,7 @@ TITLE_PROMPT = TITLE_INSTRUCTIONS + "\n\nUser prompt:\nFix duplicate notificatio
 RENAME_PROMPT = (
     TITLE_INSTRUCTIONS
     + "\nPrioritize the current task and latest substantive user request."
-    + '\n\nRecent conversation messages:\n<conversation>\n'
+    + "\n\nRecent conversation messages:\n<conversation>\n"
     + '<message role="user">Fix duplicate notifications</message>\n</conversation>'
 )
 
@@ -51,6 +52,7 @@ class NotificationTests(unittest.TestCase):
         # Functions retain this dictionary as their globals after run_path.
         self.main = runpy.run_path(str(RELAY))["main"]
         self.namespace = self.main.__globals__
+        self.namespace["claim_notification"] = lambda payload: True
 
     def invoke(self, payload):
         with patch("sys.argv", [str(RELAY), json.dumps(payload)]):
@@ -63,11 +65,16 @@ class NotificationTests(unittest.TestCase):
                     terminal = Mock(return_value=terminal_available)
                     self.namespace["send_notification_request"] = terminal
                     self.invoke({"type": "task_started"})
-                    self.invoke(completion(
-                        TITLE_PROMPT,
-                        **{"thread-id": "hidden-thread", "turn-id": "hidden-turn",
-                           "last-assistant-message": '{"title":"Fix notifications"}'},
-                    ))
+                    self.invoke(
+                        completion(
+                            TITLE_PROMPT,
+                            **{
+                                "thread-id": "hidden-thread",
+                                "turn-id": "hidden-turn",
+                                "last-assistant-message": '{"title":"Fix notifications"}',
+                            },
+                        )
+                    )
                     terminal.assert_not_called()
                     worker.assert_not_called()
                     payload = completion()
@@ -94,17 +101,29 @@ class NotificationTests(unittest.TestCase):
                 "Explain this internal prompt:\n" + TITLE_PROMPT,
                 "Generate a concise, single-line task title of at most 36 characters",
             ):
-                self.invoke(completion(prompt, **{
-                    "last-assistant-message": '{"title":"An ordinary result"}',
-                }))
+                self.invoke(
+                    completion(
+                        prompt,
+                        **{
+                            "last-assistant-message": '{"title":"An ordinary result"}',
+                        },
+                    )
+                )
             self.assertEqual(terminal.call_count, 3)
 
     def test_unsupported_events_and_malformed_payloads_are_silent(self):
         with patch.dict(self.namespace), patch("subprocess.Popen") as worker:
             terminal = Mock()
             self.namespace["send_notification_request"] = terminal
-            for payload in (None, [], "text", 1, {}, {"type": "UserPromptSubmit"},
-                            {"type": "approval-requested"}):
+            for payload in (
+                None,
+                [],
+                "text",
+                1,
+                {},
+                {"type": "UserPromptSubmit"},
+                {"type": "approval-requested"},
+            ):
                 self.assertEqual(self.invoke(payload), 0)
             with patch("sys.argv", [str(RELAY), "{invalid"]):
                 self.assertEqual(self.main(), 0)
@@ -121,22 +140,70 @@ class NotificationTests(unittest.TestCase):
         for tmux in (False, True):
             with self.subTest(tmux=tmux), patch.dict(self.namespace):
                 self.namespace["terminal_path"] = lambda: "/dev/pts/test"
-                with patch.dict(os.environ, {"TMUX": "session"} if tmux else {}, clear=True):
+                with patch.dict(
+                    os.environ, {"TMUX": "session"} if tmux else {}, clear=True
+                ):
                     terminal = mock_open()
                     with patch("builtins.open", terminal):
-                        self.assertTrue(self.namespace["send_notification_request"](completion()))
+                        self.assertTrue(
+                            self.namespace["send_notification_request"](completion())
+                        )
                 wire = terminal().write.call_args.args[0]
                 if tmux:
                     self.assertEqual(wire.count(b"\x1bPtmux;"), 2)
                 prefix = b"SetUserVar=codex_notification_request="
-                values = [base64.b64decode(part.split(b"\x07", 1)[0])
-                          for part in wire.split(prefix)[1:]]
+                values = [
+                    base64.b64decode(part.split(b"\x07", 1)[0])
+                    for part in wire.split(prefix)[1:]
+                ]
                 self.assertEqual(len(values), 2)
                 request = json.loads(values[0])
                 self.assertEqual(request["id"], "visible-thread:user-turn")
-                self.assertEqual(request["summary"], "Codex finished: Fix duplicate notifications")
+                self.assertEqual(
+                    request["summary"], "Codex finished: Fix duplicate notifications"
+                )
                 self.assertEqual(request["body"], "Fixed and verified.")
                 self.assertEqual(values[1], b"")
+
+    def test_replayed_completion_is_claimed_only_once(self):
+        claim_notification = runpy.run_path(str(RELAY))["claim_notification"]
+        namespace = claim_notification.__globals__
+        with tempfile.TemporaryDirectory() as directory:
+            namespace["DEDUPE_DIR"] = Path(directory) / "notifications"
+            payload = completion()
+            self.assertTrue(claim_notification(payload))
+            self.assertFalse(claim_notification(payload))
+            self.assertTrue(claim_notification(completion(**{"turn-id": "next-turn"})))
+
+    def test_completion_replay_stops_before_both_delivery_routes(self):
+        with patch.dict(self.namespace), patch("subprocess.Popen") as worker:
+            claim = Mock(side_effect=(True, False))
+            terminal = Mock(return_value=False)
+            self.namespace["claim_notification"] = claim
+            self.namespace["send_notification_request"] = terminal
+            payload = completion()
+            self.invoke(payload)
+            self.invoke(payload)
+            self.assertEqual(terminal.call_count, 1)
+            self.assertEqual(worker.call_count, 1)
+
+    def test_fallback_timeout_closes_without_resending(self):
+        process = Mock()
+        process.stdout.readline.return_value = "42\n"
+        process.communicate.side_effect = (
+            subprocess.TimeoutExpired("notify-send", 3),
+            ("", None),
+        )
+        with patch.dict(self.namespace), patch(
+            "shutil.which", return_value="notify-send"
+        ), patch("subprocess.Popen", return_value=process) as popen:
+            close = Mock()
+            self.namespace["close_notification"] = close
+            self.namespace["show_host_notification"](
+                "Codex finished", "Done", "7", 3000, "wezterm"
+            )
+        popen.assert_called_once()
+        close.assert_called_once_with("42")
 
 
 if __name__ == "__main__":

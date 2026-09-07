@@ -120,9 +120,13 @@ On turn completion, the relay writes an OSC 1337 user-variable request to the
 originating terminal. The host WezTerm configuration converts that request into
 a timed, clickable desktop notification named from the submitted task rather
 than the checkout directory. The stable Codex turn identity lets WezTerm ignore
-a replayed completion event, and the relay clears the request from the pane
-after delivery. Codex's hidden title-generation/rename turns also invoke the
-legacy notifier, with different thread/turn IDs. The relay suppresses their
+a replayed completion event. The relay also atomically records stable turn IDs
+in its temporary runtime directory, preventing repeated hook invocations from
+reaching either the terminal or direct desktop fallback, and clears the request
+from the pane after delivery. The notification timeout only closes the existing
+desktop notification; it never schedules a reminder or resend. Codex's hidden
+title-generation/rename turns also invoke the legacy notifier, with different
+thread/turn IDs. The relay suppresses their
 internal prompt envelopes before either delivery route, preventing a misleading
 "finished" alert near task startup. Ordinary title requests and JSON results
 still notify. The legacy payload lacks an internal/ephemeral thread flag, so
