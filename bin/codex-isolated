@@ -10,6 +10,9 @@ notification_proxy_dir=""
 notification_proxy_pid=""
 desktop_notification_args=()
 read_only_mount_args=()
+write_mount_args=()
+additional_write_codex_args=()
+declare -A mounted_write_paths=()
 
 stop_notification_proxy() {
     if [[ -n "$notification_proxy_pid" ]]; then
@@ -26,6 +29,37 @@ stop_notification_proxy() {
 }
 
 trap stop_notification_proxy EXIT
+
+if [[ -n "${CODEX_WRITE_PATHS:-}" ]]; then
+    IFS=: read -r -a configured_write_paths <<< "$CODEX_WRITE_PATHS"
+
+    for write_path in "${configured_write_paths[@]}"; do
+        [[ -n "$write_path" ]] || continue
+
+        if [[ "$write_path" != /* ]]; then
+            echo "CODEX_WRITE_PATHS entries must be absolute: $write_path" >&2
+            exit 1
+        fi
+        if [[ ! -d "$write_path" ]]; then
+            echo "CODEX_WRITE_PATHS entry is not an existing directory: $write_path" >&2
+            exit 1
+        fi
+        normalized_write_path="$(realpath -m -s -- "$write_path")"
+        resolved_write_path="$(realpath -e -- "$write_path")"
+        if [[ "$resolved_write_path" == "/" || "$resolved_write_path" == "$task_home" ]]; then
+            echo "Refusing to expose the broad writable path: $write_path" >&2
+            exit 1
+        fi
+        [[ "$resolved_write_path" != "$task_repo" ]] || continue
+        [[ -z "${mounted_write_paths[$normalized_write_path]:-}" ]] || continue
+
+        write_mount_args+=(
+            --mount "type=bind,source=${normalized_write_path},target=${normalized_write_path}"
+        )
+        additional_write_codex_args+=(--add-dir "$normalized_write_path")
+        mounted_write_paths["$normalized_write_path"]=1
+    done
+fi
 
 if [[ -n "${CODEX_READ_ONLY_PATHS:-}" ]]; then
     IFS=: read -r -a configured_read_only_paths <<< "$CODEX_READ_ONLY_PATHS"
@@ -46,6 +80,10 @@ if [[ -n "${CODEX_READ_ONLY_PATHS:-}" ]]; then
         resolved_read_only_path="$(realpath -e -- "$read_only_path")"
         if [[ "$resolved_read_only_path" == "/" || "$resolved_read_only_path" == "$task_home" ]]; then
             echo "Refusing to expose the broad read-only path: $read_only_path" >&2
+            exit 1
+        fi
+        if [[ -n "${mounted_write_paths[$normalized_read_only_path]:-}" ]]; then
+            echo "Path cannot be both writable and read-only: $read_only_path" >&2
             exit 1
         fi
         [[ -z "${mounted_read_only_paths[$normalized_read_only_path]:-}" ]] || continue
@@ -95,6 +133,7 @@ fi
 # terminal with OSC 1337, so no WezTerm control socket needs to be mounted.
 codex_args=(
     --sandbox danger-full-access
+    "${additional_write_codex_args[@]}"
 )
 
 if [[ "$task_repo" == "/" || "$task_repo" == "$HOME" ]]; then
@@ -110,6 +149,7 @@ docker run --rm -it \
     --tmpfs "/tmp:rw,exec,nosuid,nodev,mode=1777,uid=${task_uid},gid=${task_gid}" \
     --tmpfs "/home/oscar/.cache:rw,nosuid,nodev,uid=${task_uid},gid=${task_gid}" \
     --mount "type=bind,source=${task_repo},target=${task_repo}" \
+    "${write_mount_args[@]}" \
     --mount "type=bind,source=/home/oscar/.codex,target=/home/oscar/.codex" \
     --mount "type=bind,source=/home/oscar/.config/agent-skill-manager,target=/home/oscar/.config/agent-skill-manager" \
     --mount "type=bind,source=/home/oscar/.cache/codex-runtimes,target=/home/oscar/.cache/codex-runtimes" \

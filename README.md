@@ -86,6 +86,22 @@ or nonexistent paths cause the launcher to stop. The launcher also refuses `/`
 and the user's entire home directory in this list. As with `PATH`, a colon is
 the separator and therefore cannot be part of an entry.
 
+Set `CODEX_WRITE_PATHS` to a colon-separated list of additional repository
+directories that Codex should be able to modify:
+
+```bash
+cd /path/to/primary-repository
+CODEX_WRITE_PATHS=/path/to/second-repository:/path/to/third-repository codex-isolated
+```
+
+Each directory is mounted read/write at the same absolute path and passed to
+Codex with `--add-dir`. The repository where the launcher starts remains the
+primary working directory. Empty and duplicate entries are ignored, while
+relative paths, files, nonexistent directories, `/`, and the user's entire
+home directory are rejected. An entry resolving to the primary working
+directory is unnecessary and is ignored. Listing the same normalized path in
+both `CODEX_WRITE_PATHS` and `CODEX_READ_ONLY_PATHS` is rejected as ambiguous.
+
 The shared Codex configuration invokes `codex-wezterm-notify` by command name:
 
 ```toml
@@ -141,8 +157,9 @@ The container uses a read-only root filesystem, drops all capabilities, enables
 `no-new-privileges`, and gives Codex writable temporary filesystems. `/tmp` has
 normal executable, sticky-directory semantics so build and test tools can run
 the temporary programs they create; it remains protected by `nosuid` and
-`nodev` and disappears with the container. Only the current repository is
-mounted as project data.
+`nodev` and disappears with the container. Only the current repository and any
+directories explicitly named in `CODEX_WRITE_PATHS` are mounted as writable
+project data.
 
 Codex runs with `--sandbox danger-full-access` *inside* the container because a
 second Bubblewrap user namespace cannot be created reliably inside this
@@ -157,6 +174,8 @@ CLI commands.
 ## Explicit host mounts
 
 - Current repository: read/write.
+- Paths listed in `CODEX_WRITE_PATHS`: read/write, at their original absolute
+  locations and registered with Codex as additional working directories.
 - `~/.codex`: read/write for authentication, configuration, sessions, plugins,
   skills, hooks, history, and status-line settings.
 - `~/.config/agent-skill-manager`: read/write so the global `AGENTS.md` symlink

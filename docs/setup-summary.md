@@ -88,6 +88,21 @@ CODEX_READ_ONLY_PATHS=/path/to/docs:/path/to/reference-data codex-isolated
 Empty and duplicate entries are harmless. Relative paths, nonexistent paths,
 `/`, and the entire home directory are rejected before Docker starts.
 
+Additional repositories can be exposed read/write with `CODEX_WRITE_PATHS`,
+also as a colon-separated list of existing absolute directories:
+
+```bash
+cd /path/to/primary-repository
+CODEX_WRITE_PATHS=/path/to/second-repository:/path/to/third-repository codex-isolated
+```
+
+The launcher bind-mounts each directory at its original absolute path and
+passes it to Codex with `--add-dir`. The launch directory remains the primary
+working directory. Empty and duplicate entries are ignored; relative paths,
+files, nonexistent directories, `/`, and the entire home directory are
+rejected. The primary working directory is ignored if it is also listed. A
+path cannot appear in both the writable and read-only lists.
+
 ## Enforced container boundary
 
 The launcher starts Docker with:
@@ -98,11 +113,12 @@ The launcher starts Docker with:
 - Ephemeral writable `tmpfs` storage for `/tmp` and general cache files. `/tmp`
   uses normal executable, sticky-directory semantics for build and test tools,
   while retaining `nosuid` and `nodev` protections.
-- Only the current repository mounted as project data.
+- Only the current repository and directories explicitly listed in
+  `CODEX_WRITE_PATHS` mounted as writable project data.
 - The repository mounted at its original absolute host path, preserving Codex
   project trust and project-specific configuration.
-- No Docker socket, WezTerm control socket, parent workspace, sibling
-  repository, SSH directory, or general home-directory mount.
+- No Docker socket, WezTerm control socket, parent workspace, unrequested
+  sibling repository, SSH directory, or general home-directory mount.
 - No Docker client in the image. Image installation and rebuilding remain
   host-side operations because container access to the host Docker socket would
   defeat the isolation boundary.
@@ -154,6 +170,9 @@ specific host paths:
   modules used by the Node REPL.
 - Any existing absolute paths named in `CODEX_READ_ONLY_PATHS`, mounted
   read-only at the same locations inside the container.
+- Any existing absolute directories named in `CODEX_WRITE_PATHS`, mounted
+  read/write at the same locations and registered with Codex through
+  `--add-dir`.
 - A per-launch directory below `/run/user/<uid>` read-only when a desktop
   session bus is present: a filtered `xdg-dbus-proxy` socket for `notify-send`.
 

@@ -178,8 +178,13 @@ if rg -F -- 'tui.notification_method="osc9"' "$launcher" >/dev/null; then
 fi
 rg -F -- 'CODEX_READ_ONLY_PATHS' "$launcher" >/dev/null
 rg -F -- '--volume "${normalized_read_only_path}:${normalized_read_only_path}:ro"' "$launcher" >/dev/null
+rg -F -- 'CODEX_WRITE_PATHS' "$launcher" >/dev/null
+rg -F -- '--mount "type=bind,source=${normalized_write_path},target=${normalized_write_path}"' "$launcher" >/dev/null
+rg -F -- 'additional_write_codex_args+=(--add-dir "$normalized_write_path")' "$launcher" >/dev/null
+rg -F -- 'Path cannot be both writable and read-only' "$launcher" >/dev/null
 rg -F -- 'Refusing to expose the broad directory' "$launcher" >/dev/null
 rg -F -- 'Refusing to expose the broad read-only path' "$launcher" >/dev/null
+rg -F -- 'Refusing to expose the broad writable path' "$launcher" >/dev/null
 
 cmp -s "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)/bin/codex-isolated" "$launcher" || {
     echo "Installed launcher differs from the repository source; run ./install.sh" >&2
