@@ -40,7 +40,7 @@ docker run --rm \
     --read-only \
     --cap-drop ALL \
     --security-opt no-new-privileges \
-    --tmpfs "/tmp:rw,nosuid,nodev,uid=${verification_uid},gid=${verification_gid}" \
+    --tmpfs "/tmp:rw,exec,nosuid,nodev,mode=1777,uid=${verification_uid},gid=${verification_gid}" \
     --mount "type=bind,source=/usr/lib/chatgpt/resources/codex,target=/usr/lib/chatgpt/resources/codex,readonly" \
     --mount "type=bind,source=/usr/lib/chatgpt/resources/cua_node/bin/node_repl,target=/usr/lib/chatgpt/resources/cua_node/bin/node_repl,readonly" \
     --mount "type=bind,source=/usr/lib/chatgpt/resources/cua_node/lib/node_modules,target=/usr/lib/chatgpt/resources/cua_node/lib/node_modules,readonly" \
@@ -69,6 +69,11 @@ docker run --rm \
     python3 -c "import numpy" >/dev/null
     python3 -c "import yaml" >/dev/null
     python3 -m pytest --version >/dev/null
+    temporary_executable="$(mktemp)"
+    printf "#!/bin/sh\nexit 0\n" >"$temporary_executable"
+    chmod 700 "$temporary_executable"
+    "$temporary_executable"
+    rm -f "$temporary_executable"
     qt_runtime_dir="$(mktemp -d)"
     chmod 700 "$qt_runtime_dir"
     QT_QPA_PLATFORM=offscreen XDG_RUNTIME_DIR="$qt_runtime_dir" \

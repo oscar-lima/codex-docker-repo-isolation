@@ -107,7 +107,7 @@ docker run --rm -it \
     --read-only \
     --cap-drop ALL \
     --security-opt no-new-privileges \
-    --tmpfs "/tmp:rw,nosuid,nodev,uid=${task_uid},gid=${task_gid}" \
+    --tmpfs "/tmp:rw,exec,nosuid,nodev,mode=1777,uid=${task_uid},gid=${task_gid}" \
     --tmpfs "/home/oscar/.cache:rw,nosuid,nodev,uid=${task_uid},gid=${task_gid}" \
     --mount "type=bind,source=${task_repo},target=${task_repo}" \
     --mount "type=bind,source=/home/oscar/.codex,target=/home/oscar/.codex" \

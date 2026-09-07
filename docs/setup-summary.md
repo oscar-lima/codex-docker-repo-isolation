@@ -95,7 +95,9 @@ The launcher starts Docker with:
 - A read-only container root filesystem.
 - All Linux capabilities dropped.
 - `no-new-privileges` enabled.
-- Ephemeral writable `tmpfs` storage for `/tmp` and general cache files.
+- Ephemeral writable `tmpfs` storage for `/tmp` and general cache files. `/tmp`
+  uses normal executable, sticky-directory semantics for build and test tools,
+  while retaining `nosuid` and `nodev` protections.
 - Only the current repository mounted as project data.
 - The repository mounted at its original absolute host path, preserving Codex
   project trust and project-specific configuration.

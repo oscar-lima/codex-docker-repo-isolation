@@ -138,8 +138,11 @@ launched from a tmux session.
 ## Security boundary
 
 The container uses a read-only root filesystem, drops all capabilities, enables
-`no-new-privileges`, and gives Codex writable temporary filesystems. Only the
-current repository is mounted as project data.
+`no-new-privileges`, and gives Codex writable temporary filesystems. `/tmp` has
+normal executable, sticky-directory semantics so build and test tools can run
+the temporary programs they create; it remains protected by `nosuid` and
+`nodev` and disappears with the container. Only the current repository is
+mounted as project data.
 
 Codex runs with `--sandbox danger-full-access` *inside* the container because a
 second Bubblewrap user namespace cannot be created reliably inside this
