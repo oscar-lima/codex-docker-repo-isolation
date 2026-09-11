@@ -129,6 +129,8 @@ The launcher starts Docker with:
   through an OSC 1337 user variable on the existing terminal connection.
 - `tui.notifications = []` disables earlier built-in alerts, so desktop
   notifications are emitted only by the completion relay.
+- `tui.terminal_title = []` disables Codex's OSC title updates, so WezTerm keeps
+  the working-directory-based tab title supplied by its own configuration.
 - The relay filters Codex's hidden title-generation/rename prompt envelopes.
   Those internal turns invoke legacy `notify` near task startup with distinct
   IDs, so duplicate filtering alone cannot suppress the premature "finished"

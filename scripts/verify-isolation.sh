@@ -119,6 +119,7 @@ docker run --rm \
     codex-isolated \
     -c 'notify=["codex-wezterm-notify"]' \
     -c 'tui.notifications=[]' \
+    -c 'tui.terminal_title=[]' \
     features list >/dev/null
 
 python3 -c '
@@ -129,6 +130,8 @@ if config.get("notify") != ["codex-wezterm-notify"]:
     raise SystemExit("~/.codex/config.toml must set notify = [\"codex-wezterm-notify\"]")
 if config.get("tui", {}).get("notifications") != []:
     raise SystemExit("~/.codex/config.toml must set tui.notifications = []")
+if config.get("tui", {}).get("terminal_title") != []:
+    raise SystemExit("~/.codex/config.toml must set tui.terminal_title = []")
 '
 
 rg -F -- '--env TERM_PROGRAM' "$launcher" >/dev/null

@@ -109,6 +109,7 @@ notify = ["codex-wezterm-notify"]
 
 [tui]
 notifications = []
+terminal_title = []
 ```
 
 The image installs that command in `/usr/local/bin`, so it resolves from every
@@ -134,9 +135,10 @@ internal prompt envelopes before either delivery route, preventing a misleading
 still notify. The legacy payload lacks an internal/ephemeral thread flag, so
 this filter follows the title prompt format used by Codex 0.153.4. Built-in TUI alerts are
 disabled so approval or other lifecycle events do not produce an earlier
-desktop notification. `WEZTERM_PANE` and `TMUX` are forwarded as terminal
-identity markers; neither the WezTerm control socket nor a WezTerm host path is
-mounted.
+desktop notification. Codex's terminal-title updates are also disabled so the
+WezTerm tab keeps its working-directory title. `WEZTERM_PANE` and `TMUX` are
+forwarded as terminal identity markers; neither the WezTerm control socket nor
+a WezTerm host path is mounted.
 
 Run `python3 -B -m unittest discover -s tests -v` to check the notification
 lifecycle without sending desktop alerts. After changing the relay, run
