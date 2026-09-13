@@ -212,7 +212,7 @@ class NotificationTests(unittest.TestCase):
         process = Mock()
         process.stdout.readline.return_value = "42\n"
         process.communicate.side_effect = (
-            subprocess.TimeoutExpired("notify-send", 3),
+            subprocess.TimeoutExpired("notify-send", 2),
             ("", None),
         )
         with patch.dict(self.namespace), patch(
@@ -221,9 +221,11 @@ class NotificationTests(unittest.TestCase):
             close = Mock()
             self.namespace["close_notification"] = close
             self.namespace["show_host_notification"](
-                "Codex finished", "Done", "7", 3000, "wezterm"
+                "Codex finished", "Done", "7", 2000, "wezterm"
             )
-        popen.assert_called_once()
+        command = popen.call_args.args[0]
+        self.assertIn("--wait", command)
+        self.assertIn("--expire-time=2000", command)
         close.assert_called_once_with("42")
 
 

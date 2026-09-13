@@ -15,7 +15,7 @@ import time
 from urllib.parse import unquote, urlparse
 
 NOTIFICATION_VARIABLE = "codex_notification_request"
-BACKGROUND_TIMEOUT_MS = 3000
+BACKGROUND_TIMEOUT_MS = 2000
 DEDUPE_WINDOW_SECONDS = 300
 DEDUPE_DIR = Path(tempfile.gettempdir()) / f"codex-wezterm-notify-{os.getuid()}"
 
@@ -250,9 +250,10 @@ def show_host_notification(
         [
             notifier,
             "--print-id",
+            "--wait",
             "--app-name=Codex",
             "--urgency=normal",
-            "--expire-time=0",
+            f"--expire-time={timeout_ms}",
             "--action=default=Open tab",
             summary,
             body,

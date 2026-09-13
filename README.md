@@ -126,7 +126,7 @@ and a five-minute content fingerprint in its temporary runtime directory. This
 prevents repeated hook invocations from reaching either the terminal or direct
 desktop fallback even when Codex assigns the replay new IDs, while allowing a
 genuinely repeated task later. The relay clears the request from the pane after
-delivery. The notification timeout only closes the existing
+delivery. After two seconds, the notification timeout only closes the existing
 desktop notification; it never schedules a reminder or resend. Codex's hidden
 title-generation/rename turns also invoke the legacy notifier, with different
 thread/turn IDs. The relay suppresses their
