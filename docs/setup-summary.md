@@ -124,6 +124,11 @@ The launcher starts Docker with:
   defeat the isolation boundary.
 - `COLORTERM`, `TERM`, `TERM_PROGRAM`, and `TERM_PROGRAM_VERSION` are forwarded
   so terminal-aware behavior sees the same WezTerm environment as native Codex.
+- `host.docker.internal` resolves to Docker's host gateway, and
+  `MOBIPICK_GUI_REMOTE_URL` defaults to `http://host.docker.internal:8765`.
+  This lets the shared MobiPick skill call the host GUI's opt-in HTTP API with
+  `curl`; an optional `MOBIPICK_GUI_REMOTE_TOKEN` is forwarded for bearer
+  authentication. No ROS installation or Docker socket is exposed.
 - For local X11 or XWayland sessions, `DISPLAY`, the single matching X11 Unix
   socket, and a read-only Xauthority file are forwarded so Codex can paste
   clipboard images copied on the host. X11 authorization is display-wide, not
@@ -247,6 +252,8 @@ After rebuilding, `./scripts/verify-isolation.sh` checks the following behavior:
   clipboard without an X11 connection timeout.
 - All configured MCP servers initialize without startup warnings after the
   `uvx` runtime volumes were added.
+- `host.docker.internal` resolves inside the container and the MobiPick remote
+  URL and optional token reach the isolated environment.
 - Python tests run with the image-provided pytest, and a PyQt 5 widget can be
   created and processed with Qt's offscreen platform plugin.
 - The `mobipick_gpt` Git worktree remained clean throughout setup.

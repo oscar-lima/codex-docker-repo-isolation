@@ -5,6 +5,7 @@ task_repo="$(pwd -P)"
 task_uid="$(id -u)"
 task_gid="$(id -g)"
 task_home="$(realpath -e -- "$HOME")"
+mobipick_gui_remote_url="${MOBIPICK_GUI_REMOTE_URL:-http://host.docker.internal:8765}"
 notification_bus="/run/user/${task_uid}/bus"
 notification_proxy_dir=""
 notification_proxy_pid=""
@@ -173,6 +174,7 @@ fi
 
 docker run --rm -it \
     --init \
+    --add-host host.docker.internal:host-gateway \
     --read-only \
     --cap-drop ALL \
     --security-opt no-new-privileges \
@@ -193,6 +195,8 @@ docker run --rm -it \
     "${x11_args[@]}" \
     --env HOME=/home/oscar \
     --env CODEX_HOME=/home/oscar/.codex \
+    --env "MOBIPICK_GUI_REMOTE_URL=${mobipick_gui_remote_url}" \
+    --env MOBIPICK_GUI_REMOTE_TOKEN \
     --env COLORTERM \
     --env TERM \
     --env TERM_PROGRAM \

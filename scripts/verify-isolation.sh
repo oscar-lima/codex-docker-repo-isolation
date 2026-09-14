@@ -112,6 +112,17 @@ docker run --rm \
         test "$TMUX" = verification
     '
 
+docker run --rm \
+    --add-host host.docker.internal:host-gateway \
+    --env MOBIPICK_GUI_REMOTE_URL=http://host.docker.internal:8765 \
+    --env MOBIPICK_GUI_REMOTE_TOKEN=verification-token \
+    --entrypoint /bin/sh \
+    codex-isolated -c '
+        grep -F "host.docker.internal" /etc/hosts >/dev/null
+        test "$MOBIPICK_GUI_REMOTE_URL" = http://host.docker.internal:8765
+        test "$MOBIPICK_GUI_REMOTE_TOKEN" = verification-token
+    '
+
 # Make Codex validate the shared external notification configuration against
 # the installed CLI version. The command does not need authentication or a session.
 docker run --rm \
@@ -135,6 +146,10 @@ if config.get("tui", {}).get("terminal_title") != []:
 '
 
 rg -F -- '--env TERM_PROGRAM' "$launcher" >/dev/null
+rg -F -- '--add-host host.docker.internal:host-gateway' "$launcher" >/dev/null
+rg -F -- 'mobipick_gui_remote_url="${MOBIPICK_GUI_REMOTE_URL:-http://host.docker.internal:8765}"' "$launcher" >/dev/null
+rg -F -- '--env "MOBIPICK_GUI_REMOTE_URL=${mobipick_gui_remote_url}"' "$launcher" >/dev/null
+rg -F -- '--env MOBIPICK_GUI_REMOTE_TOKEN' "$launcher" >/dev/null
 rg -F -- 'xdg-dbus-proxy' "$launcher" >/dev/null
 rg -F -- '--filter' "$launcher" >/dev/null
 rg -F -- '--call=org.freedesktop.Notifications=org.freedesktop.Notifications@/org/freedesktop/Notifications' "$launcher" >/dev/null

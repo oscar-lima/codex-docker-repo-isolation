@@ -102,6 +102,33 @@ home directory are rejected. An entry resolving to the primary working
 directory is unnecessary and is ignored. Listing the same normalized path in
 both `CODEX_WRITE_PATHS` and `CODEX_READ_ONLY_PATHS` is rejected as ambiguous.
 
+### MobiPick GUI remote control
+
+Isolated Codex can control a host-running MobiPick Labs GUI through its HTTP
+remote-control API. The launcher maps `host.docker.internal` to Docker's host
+gateway and defaults `MOBIPICK_GUI_REMOTE_URL` inside the container to
+`http://host.docker.internal:8765`. The shared `mobipick-gui-remote` skill then
+uses `curl` to inspect GUI state and open GUI-managed ROS shells; neither a ROS
+installation nor the Docker socket is exposed to isolated Codex.
+
+The GUI API is opt-in and must listen on an address reachable from the Docker
+bridge. Enable it from **Tools > Remote Control > Enable Remote Control API**,
+or launch the GUI with `--remote-control`; its default `0.0.0.0:8765` binding
+works with this launcher. A GUI explicitly bound to `127.0.0.1` is host-local
+and cannot be reached through the Docker gateway.
+
+Override the URL when the GUI uses another host or port. If authentication is
+configured, the launcher also forwards the optional token:
+
+```bash
+MOBIPICK_GUI_REMOTE_URL=http://host.docker.internal:9000 \
+MOBIPICK_GUI_REMOTE_TOKEN=secret codex-isolated
+```
+
+Anyone able to reach an unauthenticated GUI API can execute commands in its
+ROS tool container. Configure a token when the API is reachable from a shared
+network.
+
 The shared Codex configuration invokes `codex-wezterm-notify` by command name:
 
 ```toml
@@ -184,6 +211,9 @@ hardened Docker sandbox. Docker is therefore the enforcement boundary.
 
 This setup restricts host filesystem visibility; it is not a network sandbox.
 Anything explicitly mounted into the container remains visible to Codex.
+The `host.docker.internal` alias gives the already network-enabled container a
+stable name for Docker's host gateway so it can reach the opt-in MobiPick GUI
+API; it does not expose the Docker control socket.
 The Docker and WezTerm control sockets are deliberately not mounted, so an
 isolated session cannot control host containers or issue unrestricted WezTerm
 CLI commands. The optional X11 display socket is an intentional desktop-access
