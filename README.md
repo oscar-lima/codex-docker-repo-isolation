@@ -159,6 +159,15 @@ can update the pane's running, attention, and completed indicators. It forwards
 `TMUX` as a marker so the helper uses tmux's OSC passthrough form when Codex is
 launched from a tmux session.
 
+When launched from a local X11 or XWayland session, the launcher forwards
+`DISPLAY`, bind-mounts only that display's Unix socket, and, when present,
+mounts the host Xauthority file read-only at a fixed container path. This lets
+Codex read an image copied on the host when the user invokes image paste. It is
+disabled automatically for non-local display values or when the matching
+socket is absent. X11 does not provide clipboard-only authorization: a client
+allowed onto the display can observe or synthesize input for other X11 clients,
+so only use this feature with code you trust to run inside the container.
+
 ## Security boundary
 
 The container uses a read-only root filesystem, drops all capabilities, enables
@@ -177,7 +186,9 @@ This setup restricts host filesystem visibility; it is not a network sandbox.
 Anything explicitly mounted into the container remains visible to Codex.
 The Docker and WezTerm control sockets are deliberately not mounted, so an
 isolated session cannot control host containers or issue unrestricted WezTerm
-CLI commands.
+CLI commands. The optional X11 display socket is an intentional desktop-access
+exception for clipboard image paste and does not weaken the filesystem mount
+boundary, but it carries the broader X11 access described above.
 
 ## Explicit host mounts
 
@@ -200,6 +211,9 @@ CLI commands.
 - A per-launch `xdg-dbus-proxy` directory under `/run/user/<uid>`: read-only and
   containing only the filtered notification socket. The host session-bus socket
   and host machine ID are not exposed.
+- For a valid local `DISPLAY`, that display's `/tmp/.X11-unix/X<n>` socket and
+  the host Xauthority file (when available): read-only, for host-to-container
+  clipboard image paste.
 
 The `codex-isolated-uv-cache` and `codex-isolated-uv-data` Docker volumes retain
 container-compatible Python MCP runtime data without sharing incompatible host

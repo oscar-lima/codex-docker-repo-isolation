@@ -124,6 +124,10 @@ The launcher starts Docker with:
   defeat the isolation boundary.
 - `COLORTERM`, `TERM`, `TERM_PROGRAM`, and `TERM_PROGRAM_VERSION` are forwarded
   so terminal-aware behavior sees the same WezTerm environment as native Codex.
+- For local X11 or XWayland sessions, `DISPLAY`, the single matching X11 Unix
+  socket, and a read-only Xauthority file are forwarded so Codex can paste
+  clipboard images copied on the host. X11 authorization is display-wide, not
+  clipboard-only, so this also grants the container access to other X11 clients.
 - The shared `notify = ["codex-wezterm-notify"]` configuration resolves the
   image-installed command from any mounted project. It relays completion data
   through an OSC 1337 user variable on the existing terminal connection.
@@ -182,6 +186,9 @@ specific host paths:
   `--add-dir`.
 - A per-launch directory below `/run/user/<uid>` read-only when a desktop
   session bus is present: a filtered `xdg-dbus-proxy` socket for `notify-send`.
+- For a valid local `DISPLAY`, its individual `/tmp/.X11-unix/X<n>` socket and,
+  when available, the host Xauthority file mounted read-only at a fixed
+  container path. These provide host-to-container clipboard image paste.
 
 The image provides its Alpine-native Node executable at the resource path used
 by MCP configuration. This keeps `cua_repl` from trying to launch the
@@ -236,6 +243,8 @@ After rebuilding, `./scripts/verify-isolation.sh` checks the following behavior:
 - `notify-send` is installed. Host verification must confirm that it reaches
   the Ubuntu notification service through the filtered proxy without exposing
   the user's D-Bus session socket.
+- A newly started local graphical session can paste an image from the host
+  clipboard without an X11 connection timeout.
 - All configured MCP servers initialize without startup warnings after the
   `uvx` runtime volumes were added.
 - Python tests run with the image-provided pytest, and a PyQt 5 widget can be

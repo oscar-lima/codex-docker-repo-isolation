@@ -140,6 +140,11 @@ rg -F -- '--filter' "$launcher" >/dev/null
 rg -F -- '--call=org.freedesktop.Notifications=org.freedesktop.Notifications@/org/freedesktop/Notifications' "$launcher" >/dev/null
 rg -F -- '--broadcast=org.freedesktop.Notifications=org.freedesktop.Notifications@/org/freedesktop/Notifications' "$launcher" >/dev/null
 rg -F -- 'DBUS_SESSION_BUS_ADDRESS=unix:path=' "$launcher" >/dev/null
+rg -F -- 'x11_socket="/tmp/.X11-unix/X${BASH_REMATCH[2]}"' "$launcher" >/dev/null
+rg -F -- '--mount "type=bind,source=${x11_socket},target=${x11_socket},readonly"' "$launcher" >/dev/null
+rg -F -- '--env "DISPLAY=${DISPLAY}"' "$launcher" >/dev/null
+rg -F -- 'host_xauthority="${XAUTHORITY:-${HOME}/.Xauthority}"' "$launcher" >/dev/null
+rg -F -- '--env "XAUTHORITY=${container_xauthority}"' "$launcher" >/dev/null
 if rg -F -- 'source=${notification_bus}' "$launcher" >/dev/null; then
     echo "Launcher exposes the unfiltered host D-Bus session socket." >&2
     exit 1
