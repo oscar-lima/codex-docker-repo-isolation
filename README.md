@@ -274,8 +274,5 @@ its packaged modules, and the Codex resource executable are mounted from the
 host. This fixes `cua_repl` startup after Codex upgrades while narrowing the
 previous whole-resources mount and preserving the container's security options.
 
-A container-local `code-review-graph` wrapper dispatches that hook command via
-`uvx`, using the persistent container-compatible `uv` volumes.
-
 See [`docs/setup-summary.md`](docs/setup-summary.md) for the complete setup and
 verification record.

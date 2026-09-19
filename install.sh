@@ -88,7 +88,6 @@ docker run --rm \
     uv --version
     yq --version
     zip -v | head -n 1
-    command -v code-review-graph
     command -v codex-wezterm-notify
     grep -F "SetUserVar=" "$(command -v codex-wezterm-notify)" >/dev/null
     codex-wezterm-notify "{\"type\":\"smoke-test\"}"

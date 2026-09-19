@@ -87,7 +87,6 @@ docker run --rm \
     command -v uv >/dev/null
     yq --version >/dev/null
     zip -v >/dev/null
-    command -v code-review-graph >/dev/null
     command -v codex-wezterm-notify >/dev/null
     grep -F "SetUserVar=" "$(command -v codex-wezterm-notify)" >/dev/null
     grep -F "user_var_sequence(\"\")" "$(command -v codex-wezterm-notify)" >/dev/null

@@ -53,7 +53,6 @@ RUN addgroup -g "${GROUP_ID}" codex \
 
 COPY --chmod=0755 scripts/wezterm-agent-state /usr/local/bin/wezterm-agent-state
 COPY --chmod=0755 scripts/codex-wezterm-notify /usr/local/bin/codex-wezterm-notify
-COPY --chmod=0755 scripts/code-review-graph /usr/local/bin/code-review-graph
 
 USER codex
 ENV HOME=/home/codex

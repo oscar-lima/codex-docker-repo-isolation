@@ -57,7 +57,6 @@ container described below supplies the enforceable host-filesystem boundary.
 - Included helper: `wezterm-agent-state`, for the shared Codex status hooks
 - Included notification relay: `codex-wezterm-notify`, for the shared Codex
   external notification command
-- Included wrapper: `code-review-graph`, dispatched through `uvx`
 
 Image rebuilds and full verification are host-side operations:
 
@@ -219,9 +218,8 @@ Python MCP servers:
 - `codex-isolated-uv-cache`
 - `codex-isolated-uv-data`
 
-The second volume contains a musl-compatible managed Python runtime. This fixed
-the `code-review-graph` MCP startup failure caused by `uvx` being unable to
-write under `~/.local/share/uv`.
+The second volume contains a musl-compatible managed Python runtime, so `uvx`
+can write under `~/.local/share/uv` instead of failing at MCP server startup.
 
 The earlier `codex-isolated-home` volume still exists but is no longer used by
 the launcher because the host `~/.codex` directory is now shared directly.
