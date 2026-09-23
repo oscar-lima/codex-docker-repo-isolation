@@ -5,6 +5,20 @@ launcher="${HOME}/.local/bin/codex-isolated"
 notification_relay="${HOME}/.local/bin/codex-wezterm-notify"
 verification_uid="$(id -u)"
 verification_gid="$(id -g)"
+shared_skills="${HOME}/.local/share/agent-skills"
+skill_links="${HOME}/.agents"
+german_brain="${HOME}/second_brain/oscar_german"
+
+for required_path in \
+    "${shared_skills}/suggest-commit-message/SKILL.md" \
+    "${shared_skills}/second-brain-ingest/SKILL.md" \
+    "${skill_links}/skills/suggest-commit-message/SKILL.md" \
+    "${german_brain}/target-words-buffer.md"; do
+    [[ -f "$required_path" ]] || {
+        echo "Required shared agent file is missing on the host: $required_path" >&2
+        exit 1
+    }
+done
 
 [[ -x "$launcher" ]] || {
     echo "Missing executable launcher: $launcher" >&2
@@ -41,6 +55,9 @@ docker run --rm \
     --cap-drop ALL \
     --security-opt no-new-privileges \
     --tmpfs "/tmp:rw,exec,nosuid,nodev,mode=1777,uid=${verification_uid},gid=${verification_gid}" \
+    --mount "type=bind,source=${shared_skills},target=${shared_skills},readonly" \
+    --mount "type=bind,source=${skill_links},target=${skill_links},readonly" \
+    --mount "type=bind,source=${german_brain},target=${german_brain}" \
     --mount "type=bind,source=/usr/lib/chatgpt/resources/codex,target=/usr/lib/chatgpt/resources/codex,readonly" \
     --mount "type=bind,source=/usr/lib/chatgpt/resources/cua_node/bin/node_repl,target=/usr/lib/chatgpt/resources/cua_node/bin/node_repl,readonly" \
     --mount "type=bind,source=/usr/lib/chatgpt/resources/cua_node/lib/node_modules,target=/usr/lib/chatgpt/resources/cua_node/lib/node_modules,readonly" \
@@ -50,6 +67,10 @@ docker run --rm \
     ! command -v docker >/dev/null
     ! command -v wezterm >/dev/null
     test ! -S /var/run/docker.sock
+    test -f /home/oscar/.local/share/agent-skills/suggest-commit-message/SKILL.md
+    test -f /home/oscar/.agents/skills/suggest-commit-message/SKILL.md
+    test -f /home/oscar/.local/share/agent-skills/second-brain-ingest/SKILL.md
+    test -f /home/oscar/second_brain/oscar_german/target-words-buffer.md
     test -z "$(find /run/user -type s -iname "*wezterm*" -print -quit)"
     /usr/lib/chatgpt/resources/cua_node/bin/node --version >/dev/null
     /usr/lib/chatgpt/resources/cua_node/bin/node_repl --help >/dev/null
@@ -180,6 +201,9 @@ if rg -F -- 'source=/etc/machine-id' "$launcher" >/dev/null; then
     exit 1
 fi
 rg -F -- 'source=/usr/lib/chatgpt/resources/codex,target=/usr/lib/chatgpt/resources/codex,readonly' "$launcher" >/dev/null
+rg -F -- 'source=${shared_skills},target=${shared_skills},readonly' "$launcher" >/dev/null
+rg -F -- 'source=${skill_links},target=${skill_links},readonly' "$launcher" >/dev/null
+rg -F -- 'source=${german_brain},target=${german_brain}' "$launcher" >/dev/null
 rg -F -- 'source=/usr/lib/chatgpt/resources/cua_node/bin/node_repl,target=/usr/lib/chatgpt/resources/cua_node/bin/node_repl,readonly' "$launcher" >/dev/null
 rg -F -- 'source=/usr/lib/chatgpt/resources/cua_node/lib/node_modules,target=/usr/lib/chatgpt/resources/cua_node/lib/node_modules,readonly' "$launcher" >/dev/null
 if rg -F -- 'source=/usr/lib/chatgpt/resources,target=/usr/lib/chatgpt/resources,readonly' "$launcher" >/dev/null; then

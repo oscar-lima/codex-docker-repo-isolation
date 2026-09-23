@@ -26,6 +26,8 @@ Requirements:
 - Python 3 on the host for the installed notification relay.
 - `xdg-dbus-proxy` installed on the host (the Ubuntu package has the same name).
 - The expected host paths described under "Explicit host mounts" below.
+- Shared skills at `~/.local/share/agent-skills` and `~/.agents`, plus the
+  German word buffer at `~/second_brain/oscar_german/target-words-buffer.md`.
 
 Run:
 
@@ -227,6 +229,12 @@ boundary, but it carries the broader X11 access described above.
   locations and registered with Codex as additional working directories.
 - `~/.codex`: read/write for authentication, configuration, sessions, plugins,
   skills, hooks, history, and status-line settings.
+- `~/.local/share/agent-skills` and `~/.agents`: read-only so global skill
+  instructions and their symlinks resolve inside the container. The launcher
+  checks for `suggest-commit-message` and `second-brain-ingest` before starting.
+- `~/second_brain/oscar_german`: read/write so the German word buffer and wiki
+  can be read and updated as required by the global agent instructions. Other
+  second-brain directories are not mounted.
 - `~/.config/agent-skill-manager`: read/write so the global `AGENTS.md` symlink
   resolves.
 - `~/.cache/codex-runtimes`: read/write for Codex runtime/plugin artifacts.

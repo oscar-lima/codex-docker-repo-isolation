@@ -5,6 +5,9 @@ task_repo="$(pwd -P)"
 task_uid="$(id -u)"
 task_gid="$(id -g)"
 task_home="$(realpath -e -- "$HOME")"
+shared_skills="${task_home}/.local/share/agent-skills"
+skill_links="${task_home}/.agents"
+german_brain="${task_home}/second_brain/oscar_german"
 mobipick_gui_remote_url="${MOBIPICK_GUI_REMOTE_URL:-http://host.docker.internal:8765}"
 notification_bus="/run/user/${task_uid}/bus"
 notification_proxy_dir=""
@@ -172,6 +175,17 @@ if [[ "$task_repo" == "/" || "$task_repo" == "$HOME" ]]; then
     exit 1
 fi
 
+for required_path in \
+    "${shared_skills}/suggest-commit-message/SKILL.md" \
+    "${shared_skills}/second-brain-ingest/SKILL.md" \
+    "${skill_links}/skills/suggest-commit-message/SKILL.md" \
+    "${german_brain}/target-words-buffer.md"; do
+    if [[ ! -f "$required_path" ]]; then
+        echo "Required shared agent file is missing on the host: $required_path" >&2
+        exit 1
+    fi
+done
+
 docker run --rm -it \
     --init \
     --add-host host.docker.internal:host-gateway \
@@ -183,6 +197,9 @@ docker run --rm -it \
     --mount "type=bind,source=${task_repo},target=${task_repo}" \
     "${write_mount_args[@]}" \
     --mount "type=bind,source=/home/oscar/.codex,target=/home/oscar/.codex" \
+    --mount "type=bind,source=${shared_skills},target=${shared_skills},readonly" \
+    --mount "type=bind,source=${skill_links},target=${skill_links},readonly" \
+    --mount "type=bind,source=${german_brain},target=${german_brain}" \
     --mount "type=bind,source=/home/oscar/.config/agent-skill-manager,target=/home/oscar/.config/agent-skill-manager" \
     --mount "type=bind,source=/home/oscar/.cache/codex-runtimes,target=/home/oscar/.cache/codex-runtimes" \
     --mount "type=volume,source=codex-isolated-uv-cache,target=/home/oscar/.cache/uv" \

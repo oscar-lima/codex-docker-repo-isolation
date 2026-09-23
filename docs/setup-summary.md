@@ -174,6 +174,12 @@ specific host paths:
 
 - `~/.codex` read/write: configuration, authentication, sessions, history,
   skills, plugins, hooks, and status-line settings.
+- `~/.local/share/agent-skills` and `~/.agents` read-only: shared skill files
+  and the symlinks used to locate them. The launcher checks that
+  `suggest-commit-message` and `second-brain-ingest` resolve on the host.
+- `~/second_brain/oscar_german` read/write: the German target-word buffer and
+  wiki used by the global instructions. The rest of `~/second_brain` stays
+  outside the container.
 - `~/.config/agent-skill-manager` read/write: target of the global
   `~/.codex/AGENTS.md` symlink.
 - `~/.cache/codex-runtimes` read/write: installed Codex runtime/plugin cache.
