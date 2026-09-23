@@ -8,6 +8,7 @@ task_home="$(realpath -e -- "$HOME")"
 shared_skills="${task_home}/.local/share/agent-skills"
 skill_links="${task_home}/.agents"
 german_brain="${task_home}/second_brain/oscar_german"
+wiki_registry="${task_home}/.config/llm-wiki-agent/vaults.tsv"
 mobipick_gui_remote_url="${MOBIPICK_GUI_REMOTE_URL:-http://host.docker.internal:8765}"
 notification_bus="/run/user/${task_uid}/bus"
 notification_proxy_dir=""
@@ -15,6 +16,7 @@ notification_proxy_pid=""
 desktop_notification_args=()
 x11_args=()
 read_only_mount_args=()
+external_skill_mount_args=()
 write_mount_args=()
 additional_write_codex_args=()
 declare -A mounted_write_paths=()
@@ -177,14 +179,33 @@ fi
 
 for required_path in \
     "${shared_skills}/suggest-commit-message/SKILL.md" \
-    "${shared_skills}/second-brain-ingest/SKILL.md" \
     "${skill_links}/skills/suggest-commit-message/SKILL.md" \
+    "${skill_links}/skills/second-brain-ingest/SKILL.md" \
+    "${wiki_registry}" \
     "${german_brain}/target-words-buffer.md"; do
     if [[ ! -f "$required_path" ]]; then
-        echo "Required shared agent file is missing on the host: $required_path" >&2
+        echo "Required agent file is missing on the host: $required_path" >&2
         exit 1
     fi
 done
+
+# Some shared skill links point into a separate skill repository. Mount only
+# that repository's skills directory so the linked skill and its helpers resolve.
+second_brain_skill="$(realpath -e -- "${skill_links}/skills/second-brain-ingest")"
+second_brain_skill_parent="$(dirname -- "$second_brain_skill")"
+if [[ ! -f "${second_brain_skill_parent}/wiki-ingest/SKILL.md" ]]; then
+    echo "Required wiki-ingest skill is missing on the host: ${second_brain_skill_parent}/wiki-ingest/SKILL.md" >&2
+    exit 1
+fi
+if [[ "$second_brain_skill_parent" != "$shared_skills" && "$(basename -- "$second_brain_skill_parent")" != "skills" ]]; then
+    echo "Refusing to expose a broad shared skill directory: $second_brain_skill_parent" >&2
+    exit 1
+fi
+if [[ "$second_brain_skill_parent" != "$shared_skills" && "$second_brain_skill_parent" != "$task_repo" ]]; then
+    external_skill_mount_args=(
+        --mount "type=bind,source=${second_brain_skill_parent},target=${second_brain_skill_parent},readonly"
+    )
+fi
 
 docker run --rm -it \
     --init \
@@ -199,7 +220,9 @@ docker run --rm -it \
     --mount "type=bind,source=/home/oscar/.codex,target=/home/oscar/.codex" \
     --mount "type=bind,source=${shared_skills},target=${shared_skills},readonly" \
     --mount "type=bind,source=${skill_links},target=${skill_links},readonly" \
+    "${external_skill_mount_args[@]}" \
     --mount "type=bind,source=${german_brain},target=${german_brain}" \
+    --mount "type=bind,source=${wiki_registry},target=${wiki_registry},readonly" \
     --mount "type=bind,source=/home/oscar/.config/agent-skill-manager,target=/home/oscar/.config/agent-skill-manager" \
     --mount "type=bind,source=/home/oscar/.cache/codex-runtimes,target=/home/oscar/.cache/codex-runtimes" \
     --mount "type=volume,source=codex-isolated-uv-cache,target=/home/oscar/.cache/uv" \

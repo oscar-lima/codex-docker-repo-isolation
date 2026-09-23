@@ -26,8 +26,10 @@ Requirements:
 - Python 3 on the host for the installed notification relay.
 - `xdg-dbus-proxy` installed on the host (the Ubuntu package has the same name).
 - The expected host paths described under "Explicit host mounts" below.
-- Shared skills at `~/.local/share/agent-skills` and `~/.agents`, plus the
-  German word buffer at `~/second_brain/oscar_german/target-words-buffer.md`.
+- Shared skills at `~/.local/share/agent-skills` and `~/.agents`, a working
+  `second-brain-ingest` skill link with its `wiki-ingest` helper, the wiki
+  registry at `~/.config/llm-wiki-agent/vaults.tsv`, and the German word buffer
+  at `~/second_brain/oscar_german/target-words-buffer.md`.
 
 Run:
 
@@ -230,8 +232,13 @@ boundary, but it carries the broader X11 access described above.
 - `~/.codex`: read/write for authentication, configuration, sessions, plugins,
   skills, hooks, history, and status-line settings.
 - `~/.local/share/agent-skills` and `~/.agents`: read-only so global skill
-  instructions and their symlinks resolve inside the container. The launcher
-  checks for `suggest-commit-message` and `second-brain-ingest` before starting.
+  instructions and their symlinks resolve inside the container.
+- The directory containing the linked `second-brain-ingest` skill and its
+  `wiki-ingest` helper: read-only. The launcher resolves the link on the host
+  and checks both skills before starting; that directory can live outside the
+  canonical shared skill store.
+- `~/.config/llm-wiki-agent/vaults.tsv`: read-only so the second-brain skill
+  can find the registered wiki.
 - `~/second_brain/oscar_german`: read/write so the German word buffer and wiki
   can be read and updated as required by the global agent instructions. Other
   second-brain directories are not mounted.

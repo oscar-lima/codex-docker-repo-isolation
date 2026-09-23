@@ -175,8 +175,12 @@ specific host paths:
 - `~/.codex` read/write: configuration, authentication, sessions, history,
   skills, plugins, hooks, and status-line settings.
 - `~/.local/share/agent-skills` and `~/.agents` read-only: shared skill files
-  and the symlinks used to locate them. The launcher checks that
-  `suggest-commit-message` and `second-brain-ingest` resolve on the host.
+  and the symlinks used to locate them.
+- The directory containing the linked `second-brain-ingest` skill and its
+  `wiki-ingest` helper read-only. The launcher follows the link on the host
+  instead of assuming that this skill is in the canonical shared skill store.
+- `~/.config/llm-wiki-agent/vaults.tsv` read-only: the wiki registry used by
+  the second-brain skill.
 - `~/second_brain/oscar_german` read/write: the German target-word buffer and
   wiki used by the global instructions. The rest of `~/second_brain` stays
   outside the container.

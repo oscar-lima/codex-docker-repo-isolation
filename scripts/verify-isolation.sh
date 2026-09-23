@@ -8,17 +8,26 @@ verification_gid="$(id -g)"
 shared_skills="${HOME}/.local/share/agent-skills"
 skill_links="${HOME}/.agents"
 german_brain="${HOME}/second_brain/oscar_german"
+wiki_registry="${HOME}/.config/llm-wiki-agent/vaults.tsv"
 
 for required_path in \
     "${shared_skills}/suggest-commit-message/SKILL.md" \
-    "${shared_skills}/second-brain-ingest/SKILL.md" \
     "${skill_links}/skills/suggest-commit-message/SKILL.md" \
+    "${skill_links}/skills/second-brain-ingest/SKILL.md" \
+    "${wiki_registry}" \
     "${german_brain}/target-words-buffer.md"; do
     [[ -f "$required_path" ]] || {
-        echo "Required shared agent file is missing on the host: $required_path" >&2
+        echo "Required agent file is missing on the host: $required_path" >&2
         exit 1
     }
 done
+
+second_brain_skill="$(realpath -e -- "${skill_links}/skills/second-brain-ingest")"
+second_brain_skill_parent="$(dirname -- "$second_brain_skill")"
+[[ -f "${second_brain_skill_parent}/wiki-ingest/SKILL.md" ]] || {
+    echo "Required wiki-ingest skill is missing on the host: ${second_brain_skill_parent}/wiki-ingest/SKILL.md" >&2
+    exit 1
+}
 
 [[ -x "$launcher" ]] || {
     echo "Missing executable launcher: $launcher" >&2
@@ -57,7 +66,9 @@ docker run --rm \
     --tmpfs "/tmp:rw,exec,nosuid,nodev,mode=1777,uid=${verification_uid},gid=${verification_gid}" \
     --mount "type=bind,source=${shared_skills},target=${shared_skills},readonly" \
     --mount "type=bind,source=${skill_links},target=${skill_links},readonly" \
+    --mount "type=bind,source=${second_brain_skill_parent},target=${second_brain_skill_parent},readonly" \
     --mount "type=bind,source=${german_brain},target=${german_brain}" \
+    --mount "type=bind,source=${wiki_registry},target=${wiki_registry},readonly" \
     --mount "type=bind,source=/usr/lib/chatgpt/resources/codex,target=/usr/lib/chatgpt/resources/codex,readonly" \
     --mount "type=bind,source=/usr/lib/chatgpt/resources/cua_node/bin/node_repl,target=/usr/lib/chatgpt/resources/cua_node/bin/node_repl,readonly" \
     --mount "type=bind,source=/usr/lib/chatgpt/resources/cua_node/lib/node_modules,target=/usr/lib/chatgpt/resources/cua_node/lib/node_modules,readonly" \
@@ -69,7 +80,9 @@ docker run --rm \
     test ! -S /var/run/docker.sock
     test -f /home/oscar/.local/share/agent-skills/suggest-commit-message/SKILL.md
     test -f /home/oscar/.agents/skills/suggest-commit-message/SKILL.md
-    test -f /home/oscar/.local/share/agent-skills/second-brain-ingest/SKILL.md
+    test -f /home/oscar/.agents/skills/second-brain-ingest/SKILL.md
+    test -f /home/oscar/.agents/skills/second-brain-ingest/../wiki-ingest/SKILL.md
+    test -f /home/oscar/.config/llm-wiki-agent/vaults.tsv
     test -f /home/oscar/second_brain/oscar_german/target-words-buffer.md
     test -z "$(find /run/user -type s -iname "*wezterm*" -print -quit)"
     /usr/lib/chatgpt/resources/cua_node/bin/node --version >/dev/null
@@ -203,7 +216,9 @@ fi
 rg -F -- 'source=/usr/lib/chatgpt/resources/codex,target=/usr/lib/chatgpt/resources/codex,readonly' "$launcher" >/dev/null
 rg -F -- 'source=${shared_skills},target=${shared_skills},readonly' "$launcher" >/dev/null
 rg -F -- 'source=${skill_links},target=${skill_links},readonly' "$launcher" >/dev/null
+rg -F -- 'source=${second_brain_skill_parent},target=${second_brain_skill_parent},readonly' "$launcher" >/dev/null
 rg -F -- 'source=${german_brain},target=${german_brain}' "$launcher" >/dev/null
+rg -F -- 'source=${wiki_registry},target=${wiki_registry},readonly' "$launcher" >/dev/null
 rg -F -- 'source=/usr/lib/chatgpt/resources/cua_node/bin/node_repl,target=/usr/lib/chatgpt/resources/cua_node/bin/node_repl,readonly' "$launcher" >/dev/null
 rg -F -- 'source=/usr/lib/chatgpt/resources/cua_node/lib/node_modules,target=/usr/lib/chatgpt/resources/cua_node/lib/node_modules,readonly' "$launcher" >/dev/null
 if rg -F -- 'source=/usr/lib/chatgpt/resources,target=/usr/lib/chatgpt/resources,readonly' "$launcher" >/dev/null; then
