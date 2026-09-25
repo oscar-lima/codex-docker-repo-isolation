@@ -93,6 +93,9 @@ docker run --rm \
     codex-wezterm-notify "{\"type\":\"smoke-test\"}"
     wezterm-agent-state running
     codex --version
+    codex --no-daemon --help >/dev/null
+    codex --no-daemon resume --help >/dev/null
+    codex --no-daemon fork --help >/dev/null
 '
 
 isolated_codex_version_output="$(

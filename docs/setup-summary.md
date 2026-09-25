@@ -76,6 +76,8 @@ codex-isolated
 ```
 
 The launcher refuses to expose `/` or the entire home directory.
+It passes `--no-daemon` to Codex, including `resume` and `fork`, because the
+container's background app server cannot persist beyond the CLI session.
 
 Additional reference files or directories can be exposed read-only by setting
 `CODEX_READ_ONLY_PATHS` to a colon-separated list of existing absolute paths:

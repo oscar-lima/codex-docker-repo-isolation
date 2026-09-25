@@ -169,6 +169,7 @@ fi
 # terminal with OSC 1337, so no WezTerm control socket needs to be mounted.
 codex_args=(
     --sandbox danger-full-access
+    --no-daemon
     "${additional_write_codex_args[@]}"
 )
 

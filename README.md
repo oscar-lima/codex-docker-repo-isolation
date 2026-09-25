@@ -75,7 +75,10 @@ codex-isolated
 ```
 
 Arguments are forwarded to Codex. The launcher refuses `/` and the user's home
-directory because either would expose an excessively broad host tree.
+directory because either would expose an excessively broad host tree. The
+launcher starts interactive Codex without its shared background app server,
+including `resume` and `fork`. Each container has its own process namespace and
+ends with the CLI session, so the shared daemon cannot persist there.
 
 Set `CODEX_READ_ONLY_PATHS` to a colon-separated list of additional absolute
 host paths that Codex should be able to read but not modify. Each existing file

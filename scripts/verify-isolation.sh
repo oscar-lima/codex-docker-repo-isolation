@@ -126,6 +126,9 @@ docker run --rm \
     grep -F "user_var_sequence(\"\")" "$(command -v codex-wezterm-notify)" >/dev/null
     codex-wezterm-notify "{\"type\":\"smoke-test\"}"
     command -v wezterm-agent-state >/dev/null
+    codex --no-daemon --help >/dev/null
+    codex --no-daemon resume --help >/dev/null
+    codex --no-daemon fork --help >/dev/null
 '
 
 docker run --rm \
@@ -242,6 +245,7 @@ rg -F -- '--volume "${normalized_read_only_path}:${normalized_read_only_path}:ro
 rg -F -- 'CODEX_WRITE_PATHS' "$launcher" >/dev/null
 rg -F -- '--mount "type=bind,source=${normalized_write_path},target=${normalized_write_path}"' "$launcher" >/dev/null
 rg -F -- 'additional_write_codex_args+=(--add-dir "$normalized_write_path")' "$launcher" >/dev/null
+rg -F -- '    --no-daemon' "$launcher" >/dev/null
 rg -F -- 'Path cannot be both writable and read-only' "$launcher" >/dev/null
 rg -F -- 'Refusing to expose the broad directory' "$launcher" >/dev/null
 rg -F -- 'Refusing to expose the broad read-only path' "$launcher" >/dev/null
